@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsc && node --inspect dist/index.js"
+    "start": "tsc && node --inspect dist/index.js",
+    "test": "tsc -p tsconfig.test.json && node --test dist-test/test/**/*.test.js"
   },
   "keywords": [],
   "author": "",
