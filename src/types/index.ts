@@ -1,3 +1,4 @@
+import type { WebSocket } from "ws";
 import type { ClientMessage } from "../schemas/index.js";
 
 export interface ClientMeta {

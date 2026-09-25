@@ -1,3 +1,4 @@
+import { WebSocket } from "ws";
 import type { ClientsType } from "../types/index.js";
 
 export function terminateSlowConsumer(clients: ClientsType, socket: WebSocket) {

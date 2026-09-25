@@ -1,3 +1,4 @@
+import { WebSocket } from "ws";
 import type { RoomsType, ClientMessage } from "../types/index.js";
 
 export function benchmarkBroadcast(

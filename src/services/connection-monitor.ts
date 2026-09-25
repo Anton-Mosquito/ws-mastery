@@ -1,6 +1,7 @@
 // src/websocket/ConnectionMonitor.ts
 import type { Redis } from "ioredis";
 import type { ClientsType } from "../types/index.js";
+import WebSocket, { type WebSocket as WsClient } from "ws";
 import {
   MAX_BUFFERED_AMOUNT,
   IDLE_TIMEOUT,
@@ -41,6 +42,8 @@ export class ConnectionMonitor {
 
     // Один прохід по клієнтах замість 3-4 окремих циклів
     for (const [socket, meta] of this.clients) {
+      const client = socket as WsClient;
+
       if (socket.readyState !== WebSocket.OPEN) continue;
 
       // 1. Перевірка на Slow Consumer (буфер)
