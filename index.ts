@@ -34,6 +34,7 @@ import {
   getToken,
   verifyToken,
   ConnectionMonitor,
+  BroadcastService,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -45,6 +46,13 @@ const clients: ClientsType = new Map();
 const clientsByUsername = new Map<string, WebSocket>();
 const rooms: RoomsType = new Map();
 const connectionsByIp = new Map<string, number>();
+
+const broadcastService = new BroadcastService(
+  rooms,
+  clients,
+  publisher,
+  INSTANCE_ID,
+);
 
 setupSubscriber((room, data) => {
   localBroadcast(rooms, room, data, clients);
@@ -486,34 +494,7 @@ function globalBroadcast(
   data: ClientMessage | Buffer,
   excludeSocket?: WebSocket,
 ) {
-  // 1. Відправляємо локальним сокетам на цій ноді
-  localBroadcast(rooms, roomName, data, clients, excludeSocket);
-
-  // 2. Визначаємо тип і формуємо об'єкт для Redis
-  const isBinary = Buffer.isBuffer(data);
-
-  const redisPayload = isBinary
-    ? {
-        instanceId: INSTANCE_ID,
-        kind: "binary",
-        room: roomName,
-        payload: data.toString("base64"),
-      }
-    : {
-        instanceId: INSTANCE_ID,
-        kind: "json",
-        room: roomName,
-        message: data,
-      };
-
-  publisher
-    .publish("ws:broadcast", JSON.stringify(redisPayload))
-    .catch((error) => {
-      console.error(
-        `💥 Redis ${isBinary ? "binary " : ""}publish error:`,
-        error.message,
-      );
-    });
+  broadcastService.broadcast(roomName, data, excludeSocket);
 }
 
 console.log("🚀 WS-сервер запущено на ws://localhost:8080");
