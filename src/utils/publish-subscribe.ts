@@ -2,7 +2,8 @@ import { Redis } from "ioredis";
 import type { RedisEnvelope } from "../types/index.js";
 import { redisEnvelopeSchema } from "../schemas/index.js";
 import { INSTANCE_ID } from "../constants/index.js";
-import { localBinaryBroadcast, isRecord } from "./index.js";
+import { localBroadcast } from "./local-broadcast.js";
+import { isRecord } from "./type-guards.js";
 
 // ⚠️ ДВА окремі з'єднання — це обов'язково
 export const publisher = new Redis({ host: "localhost", port: 6379 });
@@ -51,10 +52,7 @@ subscriber.on("message", (channel, raw) => {
 
   if (envelope.kind === "binary") {
     if (!envelope.payload) return;
-    localBinaryBroadcast(
-      envelope.room,
-      Buffer.from(envelope.payload, "base64"),
-    );
+    localBroadcast(envelope.room, Buffer.from(envelope.payload, "base64"));
     return;
   }
 

@@ -1,6 +1,6 @@
 import type { RoomsType, BroadcastData, ClientsType } from "../types/index.js";
 import { MAX_BUFFERED_AMOUNT } from "../constants/index.js";
-import { terminateSlowConsumer } from "./index.js";
+import { terminateSlowConsumer } from "./terminate-slow-consumer.js";
 
 // export function localBroadcast(
 //   rooms: RoomsType,
