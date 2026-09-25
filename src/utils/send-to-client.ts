@@ -1,11 +1,11 @@
-import type { ClientMessage, ClientsType } from "../types/index.js";
+import type { ClientsType, ServerMessage } from "../types/index.js";
 import { MAX_BUFFERED_AMOUNT } from "../constants/index.js";
 import { terminateSlowConsumer } from "./terminate-slow-consumer.js";
 import { WebSocket } from "ws";
 
 export function sendToClient(
   socket: WebSocket,
-  message: ClientMessage,
+  message: ServerMessage,
   clients: ClientsType,
 ) {
   if (socket.readyState !== WebSocket.OPEN) return false;

@@ -15,6 +15,19 @@ const messageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("system"), text: z.string().trim().min(1) }),
 ]);
 
+const serverMessageSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("error"),
+    message: z.string(),
+  }),
+  z.object({
+    type: z.literal("whisper"),
+    from: z.string(),
+    text: z.string(),
+    timestamp: z.number(),
+  }),
+]);
+
 const redisEnvelopeSchema = z.object({
   instanceId: z.string().min(1),
   room: z.string().min(1),
@@ -24,11 +37,15 @@ const redisEnvelopeSchema = z.object({
 });
 
 type ClientMessage = z.infer<typeof messageSchema>;
+type ServerMessage = z.infer<typeof serverMessageSchema>;
+
 type RedisEnvelope = z.infer<typeof redisEnvelopeSchema>;
 
 export {
   redisEnvelopeSchema,
   messageSchema,
+  serverMessageSchema,
   type ClientMessage,
+  type ServerMessage,
   type RedisEnvelope,
 };

@@ -1,5 +1,5 @@
 import type { WebSocket } from "ws";
-import type { ClientMessage } from "../schemas/index.js";
+import type { ClientMessage, ServerMessage } from "../schemas/index.js";
 
 export interface ClientMeta {
   id: string;
@@ -33,4 +33,8 @@ export interface MonitorConfig {
   slowConsumerInterval?: number;
 }
 
-export type { ClientMessage, RedisEnvelope } from "../schemas/index.js";
+export type {
+  ClientMessage,
+  RedisEnvelope,
+  ServerMessage,
+} from "../schemas/index.js";
