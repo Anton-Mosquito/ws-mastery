@@ -1,0 +1,22 @@
+config:
+  target: "ws://localhost:8000"
+  phases:
+    - duration: 30
+      arrivalRate: 10
+      name: "warm up"
+    - duration: 60
+      arrivalRate: 50
+      name: "Load"
+    - duration: 30
+      arrivalRate: 200
+      name: "Peak"
+
+scenarios:
+  - engine: ws
+    flow:
+      - send: '{"type":"join_room","room":"loadtest"}'
+      - think: 1
+      - loop:
+          - send: '{"type":"chat_message","text":"load test message"}'
+          - think: 2
+        count: 20

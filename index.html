@@ -1,0 +1,1017 @@
+Ws client · HTML
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WS Client</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0b1120;
+        --panel: #131b2e;
+        --panel-alt: #0f1627;
+        --border: #24304d;
+        --text: #dce3f2;
+        --text-dim: #7c8aab;
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.12);
+        --radius: 10px;
+        --radius-sm: 6px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          "JetBrains Mono", "IBM Plex Mono", "SFMono-Regular", Consolas,
+          monospace;
+        background: var(--bg);
+        background-image: radial-gradient(
+          circle at 15% 0%,
+          rgba(56, 189, 248, 0.08),
+          transparent 45%
+        );
+        color: var(--text);
+        line-height: 1.5;
+        padding: 32px 20px 60px;
+      }
+
+      h1 {
+        font-size: 21px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        margin: 0;
+      }
+
+      h2 {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-dim);
+        margin: 0 0 12px;
+      }
+
+      .app-shell {
+        max-width: 880px;
+        margin: 0 auto;
+      }
+
+      .app-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      #status {
+        font-size: 13px;
+        color: var(--text-dim);
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--panel);
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      #chatForm {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      #msgInput {
+        flex: 1;
+        background: var(--panel-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--text);
+        padding: 10px 12px;
+        font: inherit;
+      }
+
+      #msgInput:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      button,
+      select {
+        font: inherit;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--panel-alt);
+        color: var(--text);
+        padding: 10px 14px;
+        cursor: pointer;
+        transition:
+          border-color 0.15s ease,
+          background 0.15s ease;
+      }
+
+      button:hover {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      button:focus-visible,
+      select:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      #chatForm button {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #041018;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      #chatForm button:hover {
+        opacity: 0.9;
+      }
+
+      .frame-controls {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .frame-controls button {
+        width: 100%;
+      }
+
+      .room-row {
+        display: flex;
+        gap: 10px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+      }
+
+      #roomSelect {
+        flex: 1;
+        cursor: default;
+      }
+
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .stat-grid > div {
+        background: var(--panel-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        font-size: 13px;
+        margin: 0 !important;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1.4fr;
+        gap: 24px;
+      }
+
+      #userList,
+      #log {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 220px;
+        overflow-y: auto;
+      }
+
+      #userList li,
+      #log li {
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+      }
+
+      #userList li:last-child,
+      #log li:last-child {
+        border-bottom: none;
+      }
+
+      #log li {
+        color: var(--text-dim);
+      }
+
+      @media (max-width: 640px) {
+        .frame-controls {
+          grid-template-columns: 1fr;
+        }
+        .stat-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .two-col {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <div class="app-header">
+        <h1>WebSocket Playground 🔌</h1>
+        <div id="status">Статус: підключення...</div>
+      </div>
+
+      <div class="panel">
+        <h2>З'єднання</h2>
+        <form id="chatForm">
+          <input
+            id="msgInput"
+            placeholder="Введи повідомлення"
+            autocomplete="off"
+          />
+          <button type="submit">Відправити</button>
+        </form>
+        <div class="frame-controls">
+          <button id="textFrameBtn" type="button">
+            Надіслати текстовий фрейм
+          </button>
+          <button id="binaryFrameBtn" type="button">
+            Надіслати бінарний фрейм
+          </button>
+          <button id="protobufFrameBtn" type="button">
+            Надіслати Protobuf cursor_move
+          </button>
+          <button id="floodBtn" type="button">Надіслати 50 повідомлень</button>
+        </div>
+        <div class="room-row">
+          <select id="roomSelect">
+            <option value="lobby">Загальна кімната</option>
+            <option value="gaming">Ігри</option>
+            <option value="random">Флуд</option>
+            <option value="tech">Технічна</option>
+            <option value="design">Дизайн</option>
+          </select>
+          <button id="joinRoomBtn" type="button">Приєднатися</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Метрики</h2>
+        <div class="stat-grid">
+          <div id="latencyIndicator" style="font-weight: 700; margin: 8px 0">
+            📡 RTT: —
+          </div>
+          <div id="throughputIndicator" style="font-weight: 700; margin: 8px 0">
+            📊 Traffic: binary 0 B/s · JSON 0 B/s
+          </div>
+          <div id="encodingComparison" style="font-weight: 700; margin: 8px 0">
+            📏 Size: JSON — · DataView 7 B · Protobuf —
+          </div>
+          <div
+            id="messageRateIndicator"
+            style="font-weight: 700; margin: 8px 0"
+          >
+            ✉️ Messages: 0/s
+          </div>
+          <div id="cursorRateIndicator" style="font-weight: 700; margin: 8px 0">
+            🖱️ Cursor: raw 0/s → sent 0/s
+          </div>
+          <div
+            id="bufferedAmountIndicator"
+            style="font-weight: 700; margin: 8px 0"
+          >
+            🧱 bufferedAmount: 0 B
+          </div>
+        </div>
+      </div>
+
+      <div class="panel two-col">
+        <div>
+          <h2>Активні користувачі</h2>
+          <ul id="userList"></ul>
+        </div>
+        <div>
+          <h2>Журнал подій</h2>
+          <ul id="log"></ul>
+        </div>
+      </div>
+    </div>
+    <div
+      id="cursorLayer"
+      style="position: fixed; inset: 0; pointer-events: none; z-index: 10"
+    ></div>
+
+    <script>
+      class ResilientWebSocket {
+        constructor(url) {
+          this.url = url;
+          this.reconnectAttempts = 0;
+          this.maxReconnectDelay = 30000; // 30 сек стеля
+          this.maxRetries = 10;
+          this.intentionalClose = false;
+          this.socket = null;
+          this.latencySamples = [];
+          this.heartbeatTimer = null;
+          return this;
+        }
+
+        get readyState() {
+          return this.socket ? this.socket.readyState : WebSocket.CLOSED;
+        }
+
+        get bufferedAmount() {
+          return this.socket?.bufferedAmount ?? 0;
+        }
+
+        canSend() {
+          if (this.readyState !== WebSocket.OPEN) return false;
+          if (this.bufferedAmount > 1024 * 64) {
+            console.warn("⚠️ Буфер переповнений, пропускаємо відправку");
+            return false;
+          }
+          return true;
+        }
+
+        updateToken(token) {
+          const wsUrl = new URL(this.url);
+          wsUrl.searchParams.set("token", token);
+          this.url = wsUrl.toString();
+        }
+
+        connect() {
+          this.socket = new WebSocket(this.url);
+          this.socket.binaryType = "arraybuffer";
+
+          this.socket.addEventListener("open", () => {
+            log("✅ Підключено!");
+            this.reconnectAttempts = 0; // скидаємо лічильник при успіху
+            this.onOpen();
+          });
+
+          this.socket.addEventListener("message", (event) => {
+            this.onMessage?.(event);
+          });
+
+          this.socket.addEventListener("close", (event) => {
+            statusEl.textContent = `Статус: ❌ закрито (код ${event.code})`;
+
+            log(
+              `🔴 Закрито. Код: ${event.code}, причина: ${event.reason || "не вказана"}`,
+            );
+
+            this.stopHeartbeat();
+            if (!this.intentionalClose) {
+              this.scheduleReconnect();
+            }
+          });
+
+          this.socket.addEventListener("error", (event) => {
+            log("💥 Помилка з'єднання");
+            console.error(event);
+          });
+        }
+
+        scheduleReconnect() {
+          if (this.reconnectAttempts >= this.maxRetries) {
+            log("❌ Досягнуто ліміту спроб реконекту. Здаємось.");
+            return;
+          }
+
+          const baseDelay = Math.min(
+            1000 * 2 ** this.reconnectAttempts,
+            this.maxReconnectDelay,
+          );
+          const jitter = Math.random() * 1000; // до 1 сек випадковості
+          const delay = baseDelay + jitter;
+
+          this.reconnectAttempts++;
+          log(
+            `🔄 Спроба реконекту #${this.reconnectAttempts} через ${Math.round(delay / 1000)}с`,
+          );
+
+          setTimeout(() => this.connect(), delay);
+        }
+
+        send(data) {
+          if (this.canSend()) {
+            this.socket.send(data);
+            recordSentMessage();
+            return true;
+          } else {
+            log(
+              "⚠️ Не можу відправити — сокет не готовий або буфер переповнений",
+            );
+            return false;
+          }
+        }
+
+        sendBinary(data) {
+          if (!this.canSend()) {
+            log(
+              "⚠️ Не можу відправити binary — сокет не готовий або буфер переповнений",
+            );
+            return false;
+          }
+
+          this.socket.send(data);
+          recordSentMessage();
+          return true;
+        }
+
+        sendPing() {
+          if (this.readyState !== WebSocket.OPEN) return;
+
+          const sentAt = Date.now();
+          this.send(JSON.stringify({ type: "ping", sentAt }));
+        }
+
+        updateLatencyIndicator() {
+          if (this.latencySamples.length === 0) {
+            latencyIndicatorEl.textContent = "📡 RTT: —";
+            latencyIndicatorEl.style.color = "#666";
+            return;
+          }
+
+          const avg =
+            this.latencySamples.reduce((sum, value) => sum + value, 0) /
+            this.latencySamples.length;
+
+          const rounded = Math.round(avg);
+          let emoji = "🟢";
+          let color = "#16a34a";
+
+          if (rounded > 300) {
+            emoji = "🔴";
+            color = "#dc2626";
+          } else if (rounded > 100) {
+            emoji = "🟡";
+            color = "#d97706";
+          }
+
+          latencyIndicatorEl.textContent = `${emoji} RTT ${rounded}ms avg (last ${this.latencySamples.length})`;
+          latencyIndicatorEl.style.color = color;
+        }
+
+        stopHeartbeat() {
+          if (this.heartbeatTimer) {
+            clearInterval(this.heartbeatTimer);
+            this.heartbeatTimer = null;
+          }
+        }
+
+        sendTextFrame() {
+          this.send(
+            JSON.stringify({
+              type: "chat_message",
+              text: "Текстовий WebSocket frame",
+            }),
+          );
+          log("📤 Надіслано текстовий фрейм");
+        }
+
+        sendBinaryFrame() {
+          const buffer = encodeCursorMove(myUserId, 100, 200);
+          if (this.sendBinary(buffer)) {
+            log("📤 Надіслано бінарний cursor_move frame: x=100, y=200");
+          }
+        }
+
+        startHeartbeat() {
+          this.stopHeartbeat();
+          this.heartbeatTimer = setInterval(() => {
+            if (this.readyState === WebSocket.OPEN) {
+              this.sendPing();
+              log("📤 App-ping відправлено");
+            }
+          }, 15000);
+        }
+
+        onOpen() {
+          statusEl.textContent = "Статус: ✅ підключено";
+          log("🟢 З'єднання відкрито");
+          // this.startHeartbeat();
+        }
+
+        onMessage(event) {
+          if (event.data instanceof ArrayBuffer) {
+            try {
+              const message = decodeMessage(event.data);
+              if (message.type === "cursor_move") {
+                renderRemoteCursor(message.userId, message.x, message.y);
+              }
+            } catch (error) {
+              if (window.protobufCodecReady) {
+                window.protobufCodecReady
+                  .then((codec) => {
+                    const message = codec.decode(event.data);
+                    log(`📦 Protobuf: ${JSON.stringify(message)}`);
+                  })
+                  .catch((protobufError) => {
+                    log(
+                      `⚠️ Некоректний бінарний фрейм: ${protobufError.message}`,
+                    );
+                  });
+              } else {
+                log(`⚠️ Некоректний бінарний фрейм: ${error.message}`);
+              }
+            }
+            return;
+          } else {
+            log(`📝 Текст: ${event.data}`);
+          }
+          try {
+            const message = JSON.parse(event.data);
+            console.log(
+              "🚀 ~ ResilientWebSocket ~ onMessage ~ message:",
+              message,
+            );
+
+            if (message.type === "ping") {
+              this.send(
+                JSON.stringify({
+                  type: "pong",
+                  sentAt: message.sentAt ?? Date.now(),
+                }),
+              );
+              return;
+            }
+
+            if (message.type === "pong" && typeof message.sentAt === "number") {
+              const rtt = Date.now() - message.sentAt;
+              this.latencySamples.push(rtt);
+              if (this.latencySamples.length > 5) {
+                this.latencySamples.shift();
+              }
+              this.updateLatencyIndicator();
+              return;
+            }
+
+            if (message.type === "chat_message") {
+              log(`💬 ${message.username}: ${message.text}`);
+            } else if (message.type === "whisper") {
+              log(`🔒 Приватно від ${message.from}: ${message.text}`);
+            } else if (
+              message.type === "presence_update" &&
+              Array.isArray(message.users)
+            ) {
+              renderUsers(message.users);
+            } else if (message.type === "system") {
+              log(`ℹ️ ${message.text}`);
+            } else if (message.type === "room_joined") {
+              log(`🚪 Ти приєднався до кімнати "${message.room}"`);
+            } else if (message.type === "error") {
+              log(`⚠️ ${message.message}`);
+            } else if (message.type === "token_refreshed") {
+              log("🔐 JWT успішно оновлено");
+            } else {
+              log(`📩 Отримано: ${event.data}`);
+            }
+          } catch {
+            log(`📩 Отримано: ${event.data}`);
+          }
+        }
+
+        close() {
+          this.intentionalClose = true;
+          this.stopHeartbeat();
+          if (this.socket) {
+            this.socket.close();
+          }
+        }
+      }
+
+      const statusEl = document.getElementById("status");
+      const latencyIndicatorEl = document.getElementById("latencyIndicator");
+      const throughputIndicatorEl = document.getElementById(
+        "throughputIndicator",
+      );
+      const encodingComparisonEl =
+        document.getElementById("encodingComparison");
+      const messageRateIndicatorEl = document.getElementById(
+        "messageRateIndicator",
+      );
+      const cursorRateIndicatorEl = document.getElementById(
+        "cursorRateIndicator",
+      );
+      const bufferedAmountIndicatorEl = document.getElementById(
+        "bufferedAmountIndicator",
+      );
+      const userListEl = document.getElementById("userList");
+      const logEl = document.getElementById("log");
+      const textEncoder = new TextEncoder();
+      const cursorLayerEl = document.getElementById("cursorLayer");
+      const configuredServerUrl =
+        new URLSearchParams(window.location.search).get("server") ??
+        "http://localhost:8080";
+      const serverUrl = configuredServerUrl.replace(/\/$/, "");
+      const wsServerUrl = serverUrl.replace(/^http/, "ws");
+      window.serverUrl = serverUrl;
+      let resolveProtobufCodec;
+      let rejectProtobufCodec;
+      window.protobufCodecReady = new Promise((resolve, reject) => {
+        window.resolveProtobufCodec = resolve;
+        window.rejectProtobufCodec = reject;
+      });
+      let socket = null;
+      let authToken = null;
+      let userId = null;
+      let myUserId = 0;
+      let username = null;
+      let tokenRefreshTimer = null;
+      let pendingCursor = null;
+      let rafScheduled = false;
+      let binaryBytesThisSecond = 0;
+      let jsonBytesThisSecond = 0;
+      let messagesThisSecond = 0;
+      let rawCursorEventsThisSecond = 0;
+      let sentCursorFramesThisSecond = 0;
+      const remoteCursors = new Map();
+
+      function log(msg) {
+        const li = document.createElement("li");
+        li.textContent = msg;
+        logEl.appendChild(li);
+      }
+
+      function renderUsers(users) {
+        userListEl.replaceChildren();
+
+        users.forEach((username) => {
+          const userEl = document.createElement("li");
+          userEl.textContent = username;
+          userListEl.appendChild(userEl);
+        });
+      }
+
+      function encodeCursorMove(userId, x, y) {
+        const values = { userId, x, y };
+        for (const [name, value] of Object.entries(values)) {
+          if (!Number.isInteger(value) || value < 0 || value > 65535) {
+            throw new RangeError(
+              `${name} має бути цілим числом у діапазоні 0..65535`,
+            );
+          }
+        }
+
+        const buffer = new ArrayBuffer(7);
+        const view = new DataView(buffer);
+
+        view.setUint8(0, 1);
+        view.setUint16(1, userId, false);
+        view.setUint16(3, x, false);
+        view.setUint16(5, y, false);
+
+        return buffer;
+      }
+
+      function compareEncodingSizes() {
+        const cursorData = {
+          type: "cursor_move",
+          userId: myUserId,
+          x: 100,
+          y: 200,
+        };
+        const jsonBytes = textEncoder.encode(
+          JSON.stringify(cursorData),
+        ).byteLength;
+        const dataViewBytes = encodeCursorMove(
+          cursorData.userId,
+          cursorData.x,
+          cursorData.y,
+        ).byteLength;
+
+        window.protobufCodecReady
+          .then((codec) => {
+            const protobufBytes = codec.encode({
+              cursorMove: {
+                userId: cursorData.userId,
+                x: cursorData.x,
+                y: cursorData.y,
+              },
+            }).length;
+
+            encodingComparisonEl.textContent =
+              `📏 Size: JSON ${jsonBytes} B · ` +
+              `DataView ${dataViewBytes} B · Protobuf ${protobufBytes} B`;
+          })
+          .catch((error) => {
+            encodingComparisonEl.textContent =
+              `📏 Size: JSON ${jsonBytes} B · ` +
+              `DataView ${dataViewBytes} B · Protobuf error: ${error.message}`;
+          });
+      }
+
+      function decodeMessage(arrayBuffer) {
+        if (
+          !(arrayBuffer instanceof ArrayBuffer) ||
+          arrayBuffer.byteLength < 1
+        ) {
+          throw new Error("Порожній бінарний фрейм");
+        }
+
+        const view = new DataView(arrayBuffer);
+        const type = view.getUint8(0);
+
+        if (type === 1) {
+          if (arrayBuffer.byteLength !== 7) {
+            throw new Error("cursor_move має містити 7 байт");
+          }
+
+          return {
+            type: "cursor_move",
+            userId: view.getUint16(1, false),
+            x: view.getUint16(3, false),
+            y: view.getUint16(5, false),
+          };
+        }
+
+        throw new Error(`Невідомий тип повідомлення: ${type}`);
+      }
+
+      function getNumericUserId(value) {
+        const text = String(value);
+        let hash = 0;
+
+        for (const character of text) {
+          hash = (hash * 31 + character.charCodeAt(0)) & 0xffff;
+        }
+
+        return hash;
+      }
+
+      function renderRemoteCursor(remoteUserId, x, y) {
+        if (remoteUserId === myUserId) return;
+
+        let cursor = remoteCursors.get(remoteUserId);
+        if (!cursor) {
+          cursor = document.createElement("div");
+          cursor.textContent = "➤";
+          cursor.title = `Користувач ${remoteUserId}`;
+          cursor.style.position = "fixed";
+          cursor.style.color = "#2563eb";
+          cursor.style.fontSize = "22px";
+          cursor.style.textShadow = "0 1px 2px #fff";
+          remoteCursors.set(remoteUserId, cursor);
+          cursorLayerEl.appendChild(cursor);
+        }
+
+        cursor.style.transform = `translate(${x}px, ${y}px)`;
+      }
+
+      function updateThroughputIndicator() {
+        const binaryBytes = binaryBytesThisSecond;
+        const jsonBytes = jsonBytesThisSecond;
+        const savedBytes = Math.max(0, jsonBytes - binaryBytes);
+        const saving = jsonBytes
+          ? Math.round((savedBytes / jsonBytes) * 100)
+          : 0;
+
+        throughputIndicatorEl.textContent =
+          `📊 Traffic: binary ${binaryBytes} B/s · ` +
+          `JSON ${jsonBytes} B/s · економія ${saving}%`;
+
+        binaryBytesThisSecond = 0;
+        jsonBytesThisSecond = 0;
+        messageRateIndicatorEl.textContent = `✉️ Messages: ${messagesThisSecond}/s`;
+        messagesThisSecond = 0;
+        cursorRateIndicatorEl.textContent =
+          `🖱️ Cursor: raw ${rawCursorEventsThisSecond}/s → ` +
+          `sent ${sentCursorFramesThisSecond}/s`;
+        rawCursorEventsThisSecond = 0;
+        sentCursorFramesThisSecond = 0;
+        const bufferedAmount = socket?.bufferedAmount ?? 0;
+        bufferedAmountIndicatorEl.textContent = `🧱 bufferedAmount: ${bufferedAmount} B`;
+        bufferedAmountIndicatorEl.style.color =
+          bufferedAmount > 1024 * 64 ? "#dc2626" : "#16a34a";
+      }
+
+      function recordSentMessage() {
+        messagesThisSecond += 1;
+      }
+
+      function floodMessages() {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          log("⚠️ Флудер: WebSocket ще не підключений");
+          return;
+        }
+
+        for (let i = 0; i < 50; i++) {
+          socket.send(
+            JSON.stringify({ type: "chat_message", text: `flood ${i}` }),
+          );
+        }
+
+        log("📤 Флудер: надіслано 50 повідомлень");
+      }
+
+      document
+        .getElementById("floodBtn")
+        .addEventListener("click", floodMessages);
+
+      document
+        .getElementById("textFrameBtn")
+        .addEventListener("click", () => socket?.sendTextFrame());
+      document
+        .getElementById("binaryFrameBtn")
+        .addEventListener("click", () => socket?.sendBinaryFrame());
+      document
+        .getElementById("protobufFrameBtn")
+        .addEventListener("click", async () => {
+          if (!socket || !socket.canSend()) {
+            log("⚠️ Protobuf: WebSocket ще не підключений");
+            return;
+          }
+
+          try {
+            const codec = await window.protobufCodecReady;
+            const encoded = codec.encode({
+              cursorMove: {
+                userId: myUserId,
+                x: 100,
+                y: 200,
+                color: "#2563eb",
+              },
+            });
+            if (socket.sendBinary(encoded)) {
+              log(`📤 Надіслано Protobuf cursor_move: ${encoded.length} байт`);
+            }
+          } catch (error) {
+            log(`⚠️ Protobuf помилка: ${error.message}`);
+          }
+        });
+
+      document.getElementById("joinRoomBtn").addEventListener("click", () => {
+        const roomSelect = document.getElementById("roomSelect");
+        const selectedRoom = roomSelect.value;
+
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          log(
+            "⚠️ Не можу приєднатися до кімнати — WebSocket ще не підключений",
+          );
+          return;
+        }
+
+        socket.send(JSON.stringify({ type: "join_room", room: selectedRoom }));
+      });
+
+      document
+        .getElementById("chatForm")
+        .addEventListener("submit", (event) => {
+          event.preventDefault();
+          const val = document.getElementById("msgInput").value;
+          if (!socket || socket.readyState !== WebSocket.OPEN) {
+            log(
+              "⚠️ Сокет ще не готовий, readyState=" +
+                (socket?.readyState ?? WebSocket.CONNECTING),
+            );
+            return;
+          }
+
+          if (!val.trim()) return;
+          socket.send(JSON.stringify({ type: "chat_message", text: val }));
+          document.getElementById("msgInput").value = "";
+        });
+
+      document.addEventListener("mousemove", (e) => {
+        rawCursorEventsThisSecond += 1;
+        pendingCursor = { x: e.clientX, y: e.clientY };
+
+        if (rafScheduled) return;
+        rafScheduled = true;
+
+        requestAnimationFrame(() => {
+          rafScheduled = false;
+
+          if (!socket || !socket.canSend() || !pendingCursor) {
+            return;
+          }
+
+          const { x, y } = pendingCursor;
+          const binaryPayload = encodeCursorMove(myUserId, x, y);
+          const jsonPayload = JSON.stringify({
+            type: "cursor_move",
+            userId: myUserId,
+            x,
+            y,
+          });
+
+          if (socket.sendBinary(binaryPayload)) {
+            sentCursorFramesThisSecond += 1;
+            binaryBytesThisSecond += binaryPayload.byteLength;
+            jsonBytesThisSecond += textEncoder.encode(jsonPayload).byteLength;
+            pendingCursor = null;
+          }
+        });
+      });
+
+      setInterval(updateThroughputIndicator, 1000);
+
+      async function loginAndConnect() {
+        try {
+          statusEl.textContent = "Статус: отримання токена...";
+          const response = await fetch(`${serverUrl}/login`);
+
+          if (!response.ok) {
+            throw new Error(`Login failed: HTTP ${response.status}`);
+          }
+
+          const loginData = await response.json();
+          const { token } = loginData;
+          if (typeof token !== "string" || token.length === 0) {
+            throw new Error("Login response does not contain a token");
+          }
+
+          authToken = token;
+          userId = loginData.userId;
+          myUserId = getNumericUserId(userId);
+          username = loginData.username;
+          compareEncodingSizes();
+          const wsUrl = `${wsServerUrl}?token=${encodeURIComponent(token)}`;
+          socket = new ResilientWebSocket(wsUrl);
+          socket.connect();
+          scheduleTokenRefresh();
+        } catch (error) {
+          statusEl.textContent = "Статус: ❌ помилка авторизації";
+          log(`💥 Не вдалося отримати JWT: ${error.message}`);
+        }
+      }
+
+      function scheduleTokenRefresh() {
+        if (tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
+
+        tokenRefreshTimer = setTimeout(refreshToken, 50 * 60 * 1000);
+      }
+
+      async function refreshToken() {
+        try {
+          const params = new URLSearchParams({ userId, username });
+          const response = await fetch(
+            `${serverUrl}/login?${params.toString()}`,
+          );
+
+          if (!response.ok) {
+            throw new Error(`Refresh failed: HTTP ${response.status}`);
+          }
+
+          const { token } = await response.json();
+          if (typeof token !== "string" || !socket) {
+            throw new Error("Refresh response does not contain a token");
+          }
+
+          authToken = token;
+          socket.updateToken(token);
+          if (socket.send(JSON.stringify({ type: "refresh_token", token }))) {
+            scheduleTokenRefresh();
+          }
+        } catch (error) {
+          log(`💥 Не вдалося оновити JWT: ${error.message}`);
+        }
+      }
+
+      loginAndConnect();
+    </script>
+
+    <script type="module">
+      import protobuf from "https://cdn.jsdelivr.net/npm/protobufjs@8.8.0/+esm";
+
+      try {
+        const root = await protobuf.load(`${window.serverUrl}/messages.proto`);
+        const Envelope = root.lookupType("Envelope");
+
+        function encode(payload) {
+          const errMsg = Envelope.verify(payload);
+          if (errMsg) throw new Error(errMsg);
+
+          const message = Envelope.create(payload);
+          return Envelope.encode(message).finish();
+        }
+
+        function decode(buffer) {
+          return Envelope.decode(new Uint8Array(buffer));
+        }
+
+        window.resolveProtobufCodec({ encode, decode });
+      } catch (error) {
+        window.rejectProtobufCodec(error);
+      }
+    </script>
+  </body>
+</html>

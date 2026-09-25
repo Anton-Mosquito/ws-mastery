@@ -1,0 +1,27 @@
+import { nanoid } from "nanoid";
+
+const PORT = Number(process.env.PORT) || 8080;
+const MAX_BUFFERED_AMOUNT = 1_000_000;
+const HEARTBEAT_INTERVAL = 30_000;
+const TOKEN_CHECK_INTERVAL = 5 * 60_000;
+const IDLE_TIMEOUT = 10 * 60_000;
+const IDLE_CHECK_INTERVAL = 60_000;
+const MAX_CONNECTIONS_PER_IP = 5;
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "null",
+];
+const INSTANCE_ID = nanoid(6);
+
+export {
+  PORT,
+  MAX_BUFFERED_AMOUNT,
+  HEARTBEAT_INTERVAL,
+  TOKEN_CHECK_INTERVAL,
+  IDLE_TIMEOUT,
+  IDLE_CHECK_INTERVAL,
+  MAX_CONNECTIONS_PER_IP,
+  ALLOWED_ORIGINS,
+  INSTANCE_ID,
+};

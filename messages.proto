@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+// Current cursor transport is a compact 7-byte frame:
+// [type:uint8=1][user_id:uint16][x:uint16][y:uint16], all integers big-endian.
+// These protobuf messages describe the logical payload, not that legacy wire frame.
+message CursorMove {
+  uint32 user_id = 1;
+  uint32 x = 2;
+  uint32 y = 3;
+  optional string color = 4;
+}
+
+message ChatMessage {
+  string username = 1;
+  string text = 2;
+  uint64 timestamp = 3;
+}
+
+message SystemMessage {
+  string text = 1;
+}
+
+message WhisperMessage {
+  string from = 1;
+  string text = 2;
+  uint64 timestamp = 3;
+}
+
+message PresenceUpdate {
+  repeated string users = 1;
+}
+
+message ErrorMessage {
+  string message = 1;
+}
+
+message TokenRefreshed {
+  uint64 expires_at = 1;
+}
+
+message Envelope {
+  oneof payload {
+    CursorMove cursor_move = 1;
+    ChatMessage chat_message = 2;
+    SystemMessage system = 3;
+    WhisperMessage whisper = 4;
+    PresenceUpdate presence_update = 5;
+    ErrorMessage error = 6;
+    TokenRefreshed token_refreshed = 7;
+  }
+}
