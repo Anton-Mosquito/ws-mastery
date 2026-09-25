@@ -5,6 +5,11 @@ import { INSTANCE_ID } from "../constants/index.js";
 import { localBroadcast } from "./local-broadcast.js";
 import { isRecord } from "./type-guards.js";
 
+type LocalBroadcast = (
+  room: string,
+  data: Buffer | RedisEnvelope["message"],
+) => void;
+
 // ⚠️ ДВА окремі з'єднання — це обов'язково
 export const publisher = new Redis({ host: "localhost", port: 6379 });
 export const subscriber = new Redis({ host: "localhost", port: 6379 });
@@ -29,34 +34,37 @@ subscriber.subscribe("ws:broadcast", (err) => {
   else console.log("📡 Підписано на ws:broadcast");
 });
 
-subscriber.on("message", (channel, raw) => {
-  if (channel !== "ws:broadcast") return;
+export function setupSubscriber(onBroadcast: LocalBroadcast) {
+  subscriber.on("message", (channel, raw) => {
+    if (channel !== "ws:broadcast") return;
 
-  let envelope: RedisEnvelope;
-  try {
-    const parsed = redisEnvelopeSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success) {
-      console.warn("⚠️ Некоректний Redis envelope");
+    let envelope: RedisEnvelope;
+    try {
+      const parsed = redisEnvelopeSchema.safeParse(JSON.parse(raw));
+
+      if (!parsed.success) {
+        console.warn("⚠️ Некоректний Redis envelope");
+        return;
+      }
+
+      envelope = parsed.data;
+    } catch {
+      console.warn("⚠️ Redis message не є валідним JSON");
       return;
     }
-    envelope = parsed.data;
-  } catch {
-    console.warn("⚠️ Redis message не є валідним JSON");
-    return;
-  }
 
-  // Ігноруємо власні повідомлення (ми вже надіслали їх локально)
-  if (envelope.instanceId === INSTANCE_ID) return;
+    // Ігноруємо власні повідомлення (ми вже надіслали їх локально)
+    if (envelope.instanceId === INSTANCE_ID) return;
 
-  console.log(`📥 Отримано з Redis: ${envelope.room}`);
+    console.log(`📥 Отримано з Redis: ${envelope.room}`);
 
-  if (envelope.kind === "binary") {
-    if (!envelope.payload) return;
-    localBroadcast(envelope.room, Buffer.from(envelope.payload, "base64"));
-    return;
-  }
+    if (envelope.kind === "binary") {
+      if (!envelope.payload) return;
 
-  if (envelope.message === undefined || !isRecord(envelope.message)) return;
+      onBroadcast(envelope.room, Buffer.from(envelope.payload, "base64"));
+      return;
+    }
 
-  localBroadcast(rooms, envelope.room, envelope.message, clients);
-});
+    onBroadcast(envelope.room, envelope.message);
+  });
+}

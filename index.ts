@@ -24,6 +24,7 @@ import {
   localBroadcast,
   publisher,
   subscriber,
+  setupSubscriber,
   toBuffer,
   getClientIp,
   sendToClient,
@@ -44,6 +45,10 @@ const clients: ClientsType = new Map();
 const clientsByUsername = new Map<string, WebSocket>();
 const rooms: RoomsType = new Map();
 const connectionsByIp = new Map<string, number>();
+
+setupSubscriber((room, data) => {
+  localBroadcast(rooms, room, data, clients);
+});
 
 const monitorService = new ConnectionMonitor(clients, publisher);
 
