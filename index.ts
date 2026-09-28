@@ -9,10 +9,8 @@ import type {
   TokenPayload,
   RoomsType,
   ClientMessage,
-  RedisEnvelope,
   ClientsType,
 } from "./src/types/index.js";
-import { messageSchema } from "./src/schemas/index.js";
 import {
   PORT,
   MAX_CONNECTIONS_PER_IP,
@@ -25,6 +23,7 @@ import {
   toBuffer,
   getClientIp,
   sendToClient,
+  parseClientMessage,
 } from "./src/utils/index.js";
 import {
   RateLimiter,
@@ -279,28 +278,19 @@ wss.on(
         return;
       }
 
-      let parsedJson: unknown;
-      try {
-        parsedJson = JSON.parse(data.toString());
-      } catch {
-        socket.send(
-          JSON.stringify({ type: "error", message: "Некоректний JSON" }),
-        );
-        return;
-      }
+      const parsed = parseClientMessage(data.toString());
 
-      const parsed = messageSchema.safeParse(parsedJson);
       if (!parsed.success) {
         socket.send(
           JSON.stringify({
             type: "error",
-            message: "Невірний формат повідомлення",
+            message: parsed.errorMessage,
           }),
         );
         return;
       }
 
-      const message: ClientMessage = parsed.data;
+      const message: ClientMessage = parsed.message;
 
       if (message.type === "chat_message") {
         const text = message.text;
