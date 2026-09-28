@@ -38,6 +38,7 @@ import {
   RedisBroadcastSubscriber,
   WhisperService,
   RoomService,
+  TokenRefreshService,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -67,6 +68,8 @@ const roomService = new RoomService(
   clients,
   broadcastPresence,
 );
+
+const tokenRefreshService = new TokenRefreshService(verifyToken);
 
 redisBroadcastSubscriber.start((room, data) => {
   localBroadcast(rooms, room, data, clients);
@@ -372,29 +375,31 @@ wss.on(
       }
 
       if (message.type === "refresh_token") {
-        try {
-          const refreshedPayload = verifyToken(message.token);
-          if (
-            refreshedPayload.userId !== payload.userId ||
-            refreshedPayload.username !== meta.username
-          ) {
+        const result = tokenRefreshService.refresh(
+          payload,
+          meta.username,
+          message.token,
+        );
+
+        if (!result.success) {
+          if (result.reason === "identity_mismatch") {
             socket.close(1008, "Token identity mismatch");
             return;
           }
 
-          meta.expiresAt = refreshedPayload.exp;
-          socket.send(
-            JSON.stringify({
-              type: "token_refreshed",
-              expiresAt: refreshedPayload.exp,
-            }),
-          );
-        } catch (error) {
-          console.log(
-            `🚫 ${meta.username}: невдале оновлення JWT: ${(error as Error).message}`,
-          );
           socket.close(1008, "Invalid refresh token");
+          return;
         }
+
+        meta.expiresAt = result.payload.exp;
+
+        socket.send(
+          JSON.stringify({
+            type: "token_refreshed",
+            expiresAt: result.payload.exp,
+          }),
+        );
+
         return;
       }
 
