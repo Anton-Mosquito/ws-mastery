@@ -1,14 +1,9 @@
 import { Redis } from "ioredis";
-import type { RedisEnvelope } from "../types/index.js";
+import type { ClientMessage, RedisEnvelope } from "../types/index.js";
 import { redisEnvelopeSchema } from "../schemas/index.js";
 import { INSTANCE_ID } from "../constants/index.js";
-import { localBroadcast } from "./local-broadcast.js";
-import { isRecord } from "./type-guards.js";
 
-type LocalBroadcast = (
-  room: string,
-  data: Buffer | RedisEnvelope["message"],
-) => void;
+type LocalBroadcast = (room: string, data: Buffer | ClientMessage) => void;
 
 // ⚠️ ДВА окремі з'єднання — це обов'язково
 export const publisher = new Redis({ host: "localhost", port: 6379 });
@@ -59,7 +54,7 @@ export function setupSubscriber(onBroadcast: LocalBroadcast) {
     console.log(`📥 Отримано з Redis: ${envelope.room}`);
 
     if (envelope.kind === "binary") {
-      if (!envelope.payload) return;
+      if (envelope.payload === undefined) return;
 
       onBroadcast(envelope.room, Buffer.from(envelope.payload, "base64"));
       return;

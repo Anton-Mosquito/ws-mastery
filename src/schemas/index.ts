@@ -28,13 +28,21 @@ const serverMessageSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-const redisEnvelopeSchema = z.object({
-  instanceId: z.string().min(1),
-  room: z.string().min(1),
-  kind: z.enum(["json", "binary"]).default("json"),
-  message: messageSchema,
-  payload: z.string().optional(),
-});
+const redisEnvelopeSchema = z.discriminatedUnion("kind", [
+  z.object({
+    instanceId: z.string().min(1),
+    room: z.string().min(1),
+    kind: z.literal("json"),
+    message: messageSchema,
+  }),
+
+  z.object({
+    instanceId: z.string().min(1),
+    room: z.string().min(1),
+    kind: z.literal("binary"),
+    payload: z.string(),
+  }),
+]);
 
 type ClientMessage = z.infer<typeof messageSchema>;
 type ServerMessage = z.infer<typeof serverMessageSchema>;
