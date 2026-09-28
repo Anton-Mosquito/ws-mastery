@@ -1,27 +1,9 @@
-import { Redis } from "ioredis";
 import type { ClientMessage, RedisEnvelope } from "../types/index.js";
 import { redisEnvelopeSchema } from "../schemas/index.js";
 import { INSTANCE_ID } from "../constants/index.js";
+import { subscriber } from "../services/redis.js";
 
 type LocalBroadcast = (room: string, data: Buffer | ClientMessage) => void;
-
-// ⚠️ ДВА окремі з'єднання — це обов'язково
-export const publisher = new Redis({ host: "localhost", port: 6379 });
-export const subscriber = new Redis({ host: "localhost", port: 6379 });
-
-publisher.on("error", (error) => {
-  console.error("💥 Redis publisher error:", error.message);
-});
-subscriber.on("error", (error) => {
-  console.error("💥 Redis subscriber error:", error.message);
-});
-publisher.on("reconnecting", () =>
-  console.warn("🔁 Redis publisher reconnecting"),
-);
-
-subscriber.on("reconnecting", () =>
-  console.warn("🔁 Redis subscriber reconnecting"),
-);
 
 // Підписуємось на глобальний канал broadcast'ів
 subscriber.subscribe("ws:broadcast", (err) => {

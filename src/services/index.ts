@@ -4,3 +4,4 @@ export { ConnectionMonitor } from "./connection-monitor.js";
 export { BroadcastService } from "./broadcast-service.js";
 export { RoomManager } from "./room-manager.js";
 export { PresenceService } from "./presence-service.js";
+export { publisher, subscriber } from "./redis.js";

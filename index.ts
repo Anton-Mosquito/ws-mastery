@@ -22,8 +22,6 @@ import {
 import {
   benchmarkBroadcast,
   localBroadcast,
-  publisher,
-  subscriber,
   setupSubscriber,
   toBuffer,
   getClientIp,
@@ -37,6 +35,8 @@ import {
   BroadcastService,
   RoomManager,
   PresenceService,
+  publisher,
+  subscriber,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
