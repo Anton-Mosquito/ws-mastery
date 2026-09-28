@@ -188,4 +188,71 @@ describe("ConnectionMonitor", () => {
     assert.equal(typeof publisher.setexCalls[0]?.value, "string");
     assert.equal(publisher.setexCalls[0]?.value.length, 6);
   });
+
+  it("starts only once", () => {
+    const clients: ClientsType = new Map();
+    const publisher = createPublisher();
+
+    const monitor = new ConnectionMonitor(clients, publisher as never);
+
+    monitor.start(60_000);
+
+    const timerAfterFirstStart = (
+      monitor as unknown as {
+        timer: NodeJS.Timeout | null;
+      }
+    ).timer;
+
+    monitor.start(60_000);
+
+    const timerAfterSecondStart = (
+      monitor as unknown as {
+        timer: NodeJS.Timeout | null;
+      }
+    ).timer;
+
+    assert.notEqual(timerAfterFirstStart, null);
+    assert.equal(timerAfterSecondStart, timerAfterFirstStart);
+
+    monitor.stop();
+  });
+
+  it("stops the monitor", () => {
+    const clients: ClientsType = new Map();
+    const publisher = createPublisher();
+
+    const monitor = new ConnectionMonitor(clients, publisher as never);
+
+    monitor.start(60_000);
+
+    monitor.stop();
+
+    const timer = (
+      monitor as unknown as {
+        timer: NodeJS.Timeout | null;
+      }
+    ).timer;
+
+    assert.equal(timer, null);
+  });
+
+  it("allows stop to be called more than once", () => {
+    const clients: ClientsType = new Map();
+    const publisher = createPublisher();
+
+    const monitor = new ConnectionMonitor(clients, publisher as never);
+
+    monitor.start(60_000);
+
+    monitor.stop();
+    monitor.stop();
+
+    const timer = (
+      monitor as unknown as {
+        timer: NodeJS.Timeout | null;
+      }
+    ).timer;
+
+    assert.equal(timer, null);
+  });
 });
