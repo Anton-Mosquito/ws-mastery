@@ -40,6 +40,7 @@ import {
   RoomService,
   TokenRefreshService,
   HeartbeatService,
+  ClientRegistry,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -49,6 +50,7 @@ const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
 
 const clients: ClientsType = new Map();
 const clientsByUsername = new Map<string, WebSocket>();
+const clientRegistry = new ClientRegistry(clients, clientsByUsername);
 const whisperService = new WhisperService(clientsByUsername, clients);
 const rooms: RoomsType = new Map();
 const connectionsByIp = new Map<string, number>();
@@ -224,23 +226,13 @@ wss.on(
   ) => {
     const limiter = new RateLimiter(10, 5); // 10 повідомлень бурстом, поповнення 5/сек
     let violations = 0;
-    const { username, userId, exp } = payload;
+    const { username, userId } = payload;
 
     console.log("🌐 Origin:", request.headers.origin);
     console.log("🔍 Всі заголовки:", request.headers);
     console.log(`✅ Автентифіковано: ${username} (${userId})`);
 
-    const meta: ClientMeta = {
-      id: nanoid(8),
-      username,
-      room: "lobby",
-      isAlive: true,
-      expiresAt: exp,
-      lastActivity: Date.now(),
-    };
-
-    clients.set(socket, meta);
-    clientsByUsername.set(meta.username, socket);
+    const meta = clientRegistry.register(socket, payload);
 
     const previousRoom = meta.room;
 

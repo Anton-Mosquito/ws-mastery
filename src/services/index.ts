@@ -10,3 +10,4 @@ export { WhisperService } from "./whisper-service.js";
 export { RoomService } from "./room-service.js";
 export { TokenRefreshService } from "./token-refresh-service.js";
 export { HeartbeatService } from "./heartbeat-service.js";
+export { ClientRegistry } from "./client-registry.js";
