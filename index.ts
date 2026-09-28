@@ -39,6 +39,7 @@ import {
   WhisperService,
   RoomService,
   TokenRefreshService,
+  HeartbeatService,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -70,6 +71,7 @@ const roomService = new RoomService(
 );
 
 const tokenRefreshService = new TokenRefreshService(verifyToken);
+const heartbeatService = new HeartbeatService();
 
 redisBroadcastSubscriber.start((room, data) => {
   localBroadcast(rooms, room, data, clients);
@@ -365,13 +367,7 @@ wss.on(
       }
 
       if (message.type === "ping") {
-        meta.isAlive = true;
-        socket.send(
-          JSON.stringify({
-            type: "pong",
-            sentAt: message.sentAt ?? Date.now(),
-          }),
-        );
+        heartbeatService.handlePing(socket, meta, message.sentAt);
       }
 
       if (message.type === "refresh_token") {
@@ -404,7 +400,7 @@ wss.on(
       }
 
       if (message.type === "pong") {
-        meta.isAlive = true;
+        heartbeatService.markAlive(meta);
       }
     });
 
@@ -444,7 +440,7 @@ wss.on(
     });
 
     socket.on("pong", () => {
-      meta.isAlive = true;
+      heartbeatService.markAlive(meta);
       console.log(`💓 Pong від ${meta.username}`);
     });
   },
