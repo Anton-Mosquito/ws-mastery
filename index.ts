@@ -37,6 +37,7 @@ import {
   publisher,
   subscriber,
   RedisBroadcastSubscriber,
+  WhisperService,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -46,6 +47,7 @@ const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
 
 const clients: ClientsType = new Map();
 const clientsByUsername = new Map<string, WebSocket>();
+const whisperService = new WhisperService(clientsByUsername, clients);
 const rooms: RoomsType = new Map();
 const connectionsByIp = new Map<string, number>();
 const roomManager = new RoomManager(rooms, clients);
@@ -298,30 +300,7 @@ wss.on(
         const whisper = parseWhisperCommand(text);
 
         if (whisper) {
-          const recipient = clientsByUsername.get(whisper.recipientUsername);
-
-          if (!recipient || recipient.readyState !== WebSocket.OPEN) {
-            sendToClient(
-              socket,
-              {
-                type: "error",
-                message: `Користувача "${whisper.recipientUsername}" не знайдено`,
-              },
-              clients,
-            );
-            return;
-          }
-
-          sendToClient(
-            recipient,
-            {
-              type: "whisper",
-              from: meta.username,
-              text: whisper.text,
-              timestamp: Date.now(),
-            },
-            clients,
-          );
+          whisperService.handle(socket, meta.username, whisper);
           return;
         }
 
