@@ -7,3 +7,4 @@ export { PresenceService } from "./presence-service.js";
 export { publisher, subscriber } from "./redis.js";
 export { RedisBroadcastSubscriber } from "./redis-broadcast-subscriber.js";
 export { WhisperService } from "./whisper-service.js";
+export { RoomService } from "./room-service.js";

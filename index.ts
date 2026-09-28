@@ -22,7 +22,6 @@ import {
   localBroadcast,
   toBuffer,
   getClientIp,
-  sendToClient,
   parseClientMessage,
   parseWhisperCommand,
 } from "./src/utils/index.js";
@@ -38,6 +37,7 @@ import {
   subscriber,
   RedisBroadcastSubscriber,
   WhisperService,
+  RoomService,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -59,6 +59,13 @@ const broadcastService = new BroadcastService(
   clients,
   publisher,
   INSTANCE_ID,
+);
+
+const roomService = new RoomService(
+  roomManager,
+  presenceService,
+  clients,
+  broadcastPresence,
 );
 
 redisBroadcastSubscriber.start((room, data) => {
@@ -86,25 +93,25 @@ async function broadcastPresence(roomName: string) {
   broadcastService.broadcast(roomName, message);
 }
 
-// While room entering
-async function joinRoomDistributed(socket: WebSocket, roomName: string) {
-  const meta = clients.get(socket)!;
-  const previousRoom = roomManager.join(socket, roomName);
+// // While room entering
+// async function joinRoomDistributed(socket: WebSocket, roomName: string) {
+//   const meta = clients.get(socket)!;
+//   const previousRoom = roomManager.join(socket, roomName);
 
-  console.log(
-    `📊 Кімната "${meta.room}": ${rooms.get(meta.room)?.size ?? 0} учасників`,
-  );
+//   console.log(
+//     `📊 Кімната "${meta.room}": ${rooms.get(meta.room)?.size ?? 0} учасників`,
+//   );
 
-  // share state in Redis
-  await presenceService.removeUser(previousRoom, meta.username);
-  await presenceService.addUser(roomName, meta.username);
+//   // share state in Redis
+//   await presenceService.removeUser(previousRoom, meta.username);
+//   await presenceService.addUser(roomName, meta.username);
 
-  // Send actual lists all instances
-  await broadcastPresence(previousRoom);
-  if (previousRoom !== roomName) {
-    await broadcastPresence(roomName);
-  }
-}
+//   // Send actual lists all instances
+//   await broadcastPresence(previousRoom);
+//   if (previousRoom !== roomName) {
+//     await broadcastPresence(roomName);
+//   }
+// }
 
 server.on("request", (req, res) => {
   const url = new URL(
@@ -230,8 +237,17 @@ wss.on(
     clients.set(socket, meta);
     clientsByUsername.set(meta.username, socket);
 
-    void joinRoomDistributed(socket, "lobby")
+    const previousRoom = meta.room;
+
+    void roomService
+      .join(socket, "lobby")
       .then(() => {
+        console.log(
+          `📊 Кімната "${previousRoom}": ${
+            rooms.get(previousRoom)?.size ?? 0
+          } учасників`,
+        );
+
         const message: ClientMessage = {
           type: "system",
           text: `${meta.username} приєднався до кімнати`,
@@ -326,7 +342,7 @@ wss.on(
         broadcastService.broadcast(previousRoom, systemLeftMessage);
 
         try {
-          await joinRoomDistributed(socket, roomName);
+          await roomService.join(socket, roomName);
         } catch (error) {
           console.error(
             `💥 Presence room change error for ${meta.username}:`,
