@@ -22,7 +22,6 @@ import {
 import {
   benchmarkBroadcast,
   localBroadcast,
-  setupSubscriber,
   toBuffer,
   getClientIp,
   sendToClient,
@@ -37,6 +36,7 @@ import {
   PresenceService,
   publisher,
   subscriber,
+  RedisBroadcastSubscriber,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -50,6 +50,7 @@ const rooms: RoomsType = new Map();
 const connectionsByIp = new Map<string, number>();
 const roomManager = new RoomManager(rooms, clients);
 const presenceService = new PresenceService(publisher);
+const redisBroadcastSubscriber = new RedisBroadcastSubscriber(subscriber);
 
 const broadcastService = new BroadcastService(
   rooms,
@@ -58,7 +59,7 @@ const broadcastService = new BroadcastService(
   INSTANCE_ID,
 );
 
-setupSubscriber((room, data) => {
+redisBroadcastSubscriber.start((room, data) => {
   localBroadcast(rooms, room, data, clients);
 });
 
