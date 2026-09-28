@@ -75,7 +75,7 @@ async function broadcastPresence(roomName: string) {
     users,
   };
 
-  globalBroadcast(roomName, message);
+  broadcastService.broadcast(roomName, message);
 }
 
 // While room entering
@@ -238,7 +238,7 @@ wss.on(
           text: `${meta.username} приєднався до кімнати`,
         };
 
-        globalBroadcast("lobby", message);
+        broadcastService.broadcast("lobby", message);
       })
       .catch((error) => {
         console.error(
@@ -257,7 +257,7 @@ wss.on(
       if (isBinary) {
         const payload = toBuffer(data);
         console.log(`📦 Бінарний фрейм, ${payload.length} байт`);
-        globalBroadcast(meta.room, payload);
+        broadcastService.broadcast(meta.room, payload);
         return;
       } else {
         console.log(`📝 Текстовий фрейм:`, data.toString());
@@ -347,7 +347,8 @@ wss.on(
           text,
           timestamp: Date.now(),
         };
-        globalBroadcast(meta.room, clientMessage);
+
+        broadcastService.broadcast(meta.room, clientMessage);
         return;
       }
 
@@ -359,7 +360,7 @@ wss.on(
           text: `${meta.username} залишив кімнату`,
         };
 
-        globalBroadcast(previousRoom, systemLeftMessage);
+        broadcastService.broadcast(previousRoom, systemLeftMessage);
 
         try {
           await joinRoomDistributed(socket, roomName);
@@ -377,7 +378,7 @@ wss.on(
           text: `${meta.username} приєднався до кімнати`,
         };
 
-        globalBroadcast(roomName, systemJoinMessage, socket);
+        broadcastService.broadcast(roomName, systemJoinMessage, socket);
         socket.send(JSON.stringify({ type: "room_joined", room: roomName }));
       }
 
@@ -427,7 +428,7 @@ wss.on(
       const meta = clients.get(socket)!;
       await publisher.srem(`room:${meta.room}:users`, meta.username);
 
-      globalBroadcast(
+      broadcastService.broadcast(
         meta.room,
         {
           type: "system",
@@ -465,7 +466,9 @@ wss.on(
   },
 );
 
-benchmarkBroadcast(rooms, globalBroadcast);
+benchmarkBroadcast(rooms, (room, data, excludeSocket) =>
+  broadcastService.broadcast(room, data, excludeSocket),
+);
 
 async function handleShutdown() {
   console.log("Shutting down server...");
@@ -487,15 +490,6 @@ async function handleShutdown() {
 
 process.on("SIGINT", handleShutdown);
 process.on("SIGTERM", handleShutdown);
-
-// Глобальний broadcast: локально + публікація в Redis
-function globalBroadcast(
-  roomName: string,
-  data: ClientMessage | Buffer,
-  excludeSocket?: WebSocket,
-) {
-  broadcastService.broadcast(roomName, data, excludeSocket);
-}
 
 console.log("🚀 WS-сервер запущено на ws://localhost:8080");
 
