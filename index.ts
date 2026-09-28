@@ -36,6 +36,7 @@ import {
   ConnectionMonitor,
   BroadcastService,
   RoomManager,
+  PresenceService,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -48,6 +49,7 @@ const clientsByUsername = new Map<string, WebSocket>();
 const rooms: RoomsType = new Map();
 const connectionsByIp = new Map<string, number>();
 const roomManager = new RoomManager(rooms, clients);
+const presenceService = new PresenceService(publisher);
 
 const broadcastService = new BroadcastService(
   rooms,
@@ -71,7 +73,8 @@ function logAuthFailure(request: IncomingMessage, reason: string) {
 }
 
 async function broadcastPresence(roomName: string) {
-  const users = await publisher.smembers(`room:${roomName}:users`);
+  const users = await presenceService.getUsers(roomName);
+
   const message: ClientMessage = {
     type: "presence_update",
     users,
@@ -90,8 +93,8 @@ async function joinRoomDistributed(socket: WebSocket, roomName: string) {
   );
 
   // share state in Redis
-  await publisher.srem(`room:${previousRoom}:users`, meta.username);
-  await publisher.sadd(`room:${roomName}:users`, meta.username);
+  await presenceService.removeUser(previousRoom, meta.username);
+  await presenceService.addUser(roomName, meta.username);
 
   // Send actual lists all instances
   await broadcastPresence(previousRoom);
@@ -419,7 +422,7 @@ wss.on(
 
     socket.on("close", async () => {
       const meta = clients.get(socket)!;
-      await publisher.srem(`room:${meta.room}:users`, meta.username);
+      await presenceService.removeUser(meta.room, meta.username);
 
       broadcastService.broadcast(
         meta.room,
@@ -468,7 +471,7 @@ async function handleShutdown() {
   console.log("🛑 Graceful shutdown...");
 
   for (const [socket, meta] of clients) {
-    await publisher.srem(`room:${meta.room}:users`, meta.username);
+    await presenceService.removeUser(meta.room, meta.username);
     socket.close(1001, "Server shutting down");
   }
 
