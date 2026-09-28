@@ -24,6 +24,7 @@ import {
   getClientIp,
   sendToClient,
   parseClientMessage,
+  parseWhisperCommand,
 } from "./src/utils/index.js";
 import {
   RateLimiter,
@@ -294,21 +295,17 @@ wss.on(
 
       if (message.type === "chat_message") {
         const text = message.text;
-        const whisperMatch = text.match(/^\/whisper\s+(\S+)\s+(.+)$/s);
+        const whisper = parseWhisperCommand(text);
 
-        if (whisperMatch) {
-          const recipientUsername = whisperMatch[1];
-          const whisperText = whisperMatch[2];
-          if (!recipientUsername || !whisperText) return;
-
-          const recipient = clientsByUsername.get(recipientUsername);
+        if (whisper) {
+          const recipient = clientsByUsername.get(whisper.recipientUsername);
 
           if (!recipient || recipient.readyState !== WebSocket.OPEN) {
             sendToClient(
               socket,
               {
                 type: "error",
-                message: `Користувача "${recipientUsername}" не знайдено`,
+                message: `Користувача "${whisper.recipientUsername}" не знайдено`,
               },
               clients,
             );
@@ -320,7 +317,7 @@ wss.on(
             {
               type: "whisper",
               from: meta.username,
-              text: whisperText.trim(),
+              text: whisper.text,
               timestamp: Date.now(),
             },
             clients,
