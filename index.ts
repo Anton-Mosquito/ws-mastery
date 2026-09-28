@@ -35,6 +35,7 @@ import {
   verifyToken,
   ConnectionMonitor,
   BroadcastService,
+  RoomManager,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -46,6 +47,7 @@ const clients: ClientsType = new Map();
 const clientsByUsername = new Map<string, WebSocket>();
 const rooms: RoomsType = new Map();
 const connectionsByIp = new Map<string, number>();
+const roomManager = new RoomManager(rooms, clients);
 
 const broadcastService = new BroadcastService(
   rooms,
@@ -81,24 +83,15 @@ async function broadcastPresence(roomName: string) {
 // While room entering
 async function joinRoomDistributed(socket: WebSocket, roomName: string) {
   const meta = clients.get(socket)!;
-  const previousRoom = meta.room;
-
-  // leave old room
-  rooms.get(previousRoom)?.delete(socket);
+  const previousRoom = roomManager.join(socket, roomName);
 
   console.log(
     `📊 Кімната "${meta.room}": ${rooms.get(meta.room)?.size ?? 0} учасників`,
   );
 
-  // join new room
-  if (!rooms.has(roomName)) rooms.set(roomName, new Set());
-  rooms.get(roomName)!.add(socket);
-
   // share state in Redis
   await publisher.srem(`room:${previousRoom}:users`, meta.username);
   await publisher.sadd(`room:${roomName}:users`, meta.username);
-
-  meta.room = roomName;
 
   // Send actual lists all instances
   await broadcastPresence(previousRoom);
@@ -437,7 +430,7 @@ wss.on(
         socket,
       );
 
-      rooms.get(meta.room)?.delete(socket);
+      roomManager.leave(socket);
 
       console.log(
         `📊 Кімната "${meta.room}": ${rooms.get(meta.room)?.size ?? 0} учасників`,
