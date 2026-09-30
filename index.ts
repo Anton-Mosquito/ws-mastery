@@ -38,6 +38,7 @@ import {
   ConnectionCleanupService,
   MessageHandler,
   WebSocketAuthService,
+  ConnectionLifecycleService,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -81,6 +82,11 @@ const connectionCleanupService = new ConnectionCleanupService(
   broadcastPresence,
   connectionsByIp,
   rooms,
+);
+
+const connectionLifecycleService = new ConnectionLifecycleService(
+  connectionCleanupService,
+  heartbeatService,
 );
 
 redisBroadcastSubscriber.start((room, data) => {
@@ -271,12 +277,11 @@ wss.on(
     });
 
     socket.on("close", () => {
-      void connectionCleanupService.cleanup(socket, clientIp);
+      connectionLifecycleService.handleClose(socket, clientIp);
     });
 
     socket.on("pong", () => {
-      heartbeatService.markAlive(meta);
-      console.log(`💓 Pong від ${meta.username}`);
+      connectionLifecycleService.handlePong(meta);
     });
   },
 );
