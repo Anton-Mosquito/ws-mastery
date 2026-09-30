@@ -13,3 +13,4 @@ export { HeartbeatService } from "./heartbeat-service.js";
 export { ClientRegistry } from "./client-registry.js";
 export { ConnectionCleanupService } from "./connection-cleanup-service.js";
 export { MessageHandler } from "./message-handler.js";
+export { WebSocketAuthService } from "./websocket-auth-service.js";

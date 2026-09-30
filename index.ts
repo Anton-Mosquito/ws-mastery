@@ -43,6 +43,7 @@ import {
   ClientRegistry,
   ConnectionCleanupService,
   MessageHandler,
+  WebSocketAuthService,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -75,6 +76,7 @@ const roomService = new RoomService(
 );
 
 const tokenRefreshService = new TokenRefreshService(verifyToken);
+const webSocketAuthService = new WebSocketAuthService(verifyToken);
 const heartbeatService = new HeartbeatService();
 
 const connectionCleanupService = new ConnectionCleanupService(
@@ -191,34 +193,20 @@ server.on("upgrade", (request, socket, head) => {
     return;
   }
 
-  // 1️⃣ Перевірка Origin
-  if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
-    logAuthFailure(request, `відхилений Origin: ${origin ?? "відсутній"}`);
-    socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");
+  const authResult = webSocketAuthService.authenticate(request);
+
+  if (!authResult.success) {
+    logAuthFailure(request, authResult.reason);
+
+    const statusText =
+      authResult.statusCode === 403 ? "Forbidden" : "Unauthorized";
+
+    socket.write(`HTTP/1.1 ${authResult.statusCode} ${statusText}\r\n\r\n`);
     socket.destroy();
     return;
   }
 
-  // Витягуємо токен з query-параметра
-  const url = new URL(request.url!, `http://${request.headers.host}`);
-  const token = url.searchParams.get("token");
-
-  if (!token) {
-    logAuthFailure(request, "відсутній токен");
-    socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-    socket.destroy();
-    return;
-  }
-
-  let payload: TokenPayload;
-  try {
-    payload = verifyToken(token);
-  } catch (err) {
-    logAuthFailure(request, "невалідний або прострочений токен");
-    socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-    socket.destroy();
-    return;
-  }
+  const { payload } = authResult;
 
   // 2️⃣ Якщо все ок — завершуємо handshake
   wss.handleUpgrade(request, socket, head, (ws) => {
