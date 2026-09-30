@@ -15,3 +15,4 @@ export { ConnectionCleanupService } from "./connection-cleanup-service.js";
 export { MessageHandler } from "./message-handler.js";
 export { WebSocketAuthService } from "./websocket-auth-service.js";
 export { ConnectionLifecycleService } from "./connection-lifecycle-service.js";
+export { LoginService } from "./login-service.js";

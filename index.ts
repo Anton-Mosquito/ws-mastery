@@ -2,7 +2,6 @@ import http, { type IncomingMessage } from "http";
 import { readFileSync } from "fs";
 import { WebSocketServer, WebSocket } from "ws";
 import type { RawData } from "ws";
-import { nanoid } from "nanoid";
 
 import type {
   TokenPayload,
@@ -39,6 +38,7 @@ import {
   MessageHandler,
   WebSocketAuthService,
   ConnectionLifecycleService,
+  LoginService,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -55,6 +55,7 @@ const connectionsByIp = new Map<string, number>();
 const roomManager = new RoomManager(rooms, clients);
 const presenceService = new PresenceService(publisher);
 const redisBroadcastSubscriber = new RedisBroadcastSubscriber(subscriber);
+const loginService = new LoginService(getToken);
 
 const broadcastService = new BroadcastService(
   rooms,
@@ -167,18 +168,18 @@ server.on("request", (req, res) => {
     return;
   }
 
-  const username =
-    url.searchParams.get("username")?.trim() || `Гість-${nanoid(4)}`;
-  const userId = url.searchParams.get("userId")?.trim() || nanoid(8);
-
-  const token = getToken(username, userId);
+  const result = loginService.login(
+    url.searchParams.get("username"),
+    url.searchParams.get("userId"),
+  );
 
   res.writeHead(200, {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     Vary: "Origin",
   });
-  res.end(JSON.stringify({ token, expiresIn: "1h", userId, username }));
+
+  res.end(JSON.stringify(result));
 });
 
 server.on("upgrade", (request, socket, head) => {
