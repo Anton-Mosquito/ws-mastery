@@ -26,4 +26,15 @@ export class ClientRegistry {
 
     return meta;
   }
+
+  unregister(socket: WebSocket): ClientMeta | undefined {
+    const meta = this.clients.get(socket);
+
+    if (!meta) return undefined;
+
+    this.clients.delete(socket);
+    this.clientsByUsername.delete(meta.username);
+
+    return meta;
+  }
 }

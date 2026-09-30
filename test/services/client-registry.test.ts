@@ -101,4 +101,56 @@ describe("ClientRegistry", () => {
     assert.ok(meta.lastActivity >= before);
     assert.ok(meta.lastActivity <= after);
   });
+
+  it("unregisters a client", () => {
+    const clients: ClientsType = new Map();
+    const clientsByUsername = new Map<string, WebSocket>();
+
+    const registry = new ClientRegistry(clients, clientsByUsername);
+
+    const socket = createSocket();
+
+    registry.register(socket, {
+      userId: "user-1",
+      username: "Anton",
+      exp: 1234567890,
+    });
+
+    const meta = registry.unregister(socket);
+
+    assert.equal(meta?.username, "Anton");
+    assert.equal(clients.has(socket), false);
+    assert.equal(clientsByUsername.has("Anton"), false);
+  });
+
+  it("returns undefined when unregistering an unknown client", () => {
+    const clients: ClientsType = new Map();
+    const clientsByUsername = new Map<string, WebSocket>();
+
+    const registry = new ClientRegistry(clients, clientsByUsername);
+
+    const socket = createSocket();
+
+    assert.equal(registry.unregister(socket), undefined);
+  });
+
+  it("removes the client from both registries", () => {
+    const clients: ClientsType = new Map();
+    const clientsByUsername = new Map<string, WebSocket>();
+
+    const registry = new ClientRegistry(clients, clientsByUsername);
+
+    const socket = createSocket();
+
+    registry.register(socket, {
+      userId: "user-1",
+      username: "Anton",
+      exp: 1234567890,
+    });
+
+    registry.unregister(socket);
+
+    assert.equal(clients.size, 0);
+    assert.equal(clientsByUsername.size, 0);
+  });
 });

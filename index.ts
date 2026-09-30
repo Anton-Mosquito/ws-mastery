@@ -415,8 +415,7 @@ wss.on(
         `📊 Кімната "${meta.room}": ${rooms.get(meta.room)?.size ?? 0} учасників`,
       );
 
-      clients.delete(socket);
-      clientsByUsername.delete(meta.username);
+      clientRegistry.unregister(socket);
 
       const remaining = (connectionsByIp.get(clientIp) ?? 1) - 1;
 
