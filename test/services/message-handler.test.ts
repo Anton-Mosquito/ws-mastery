@@ -331,4 +331,69 @@ describe("MessageHandler", () => {
       }),
     ]);
   });
+
+  it("applies rate limit after the burst is exhausted", async () => {
+    const { handler, sent, deps } = createHandler();
+
+    const ping = Buffer.from(
+      JSON.stringify({
+        type: "ping",
+        sentAt: 123,
+      }),
+    );
+
+    for (let i = 0; i < 10; i++) {
+      await handler.handle(ping, false);
+    }
+
+    assert.equal(deps.heartbeats.length, 10);
+    assert.deepEqual(sent, []);
+
+    await handler.handle(ping, false);
+
+    assert.equal(deps.heartbeats.length, 10);
+    assert.deepEqual(sent, [
+      JSON.stringify({
+        type: "error",
+        message: "Занадто багато повідомлень, пригальмуй",
+      }),
+    ]);
+  });
+
+  it("closes the socket after five rate limit violations", async () => {
+    const { handler, sent, closed } = createHandler();
+
+    const ping = Buffer.from(
+      JSON.stringify({
+        type: "ping",
+        sentAt: 123,
+      }),
+    );
+
+    for (let i = 0; i < 15; i++) {
+      await handler.handle(ping, false);
+    }
+
+    assert.equal(sent.length, 5);
+
+    assert.deepEqual(closed, [
+      {
+        code: 1008,
+        reason: "Rate limit violation",
+      },
+    ]);
+  });
+
+  it("does not apply rate limit to binary messages", async () => {
+    const { handler, deps, sent } = createHandler();
+
+    const binary = Buffer.from("hello");
+
+    for (let i = 0; i < 11; i++) {
+      await handler.handle(binary, true);
+    }
+
+    assert.equal(deps.broadcasts.length, 11);
+    assert.deepEqual(sent, []);
+  });
 });
