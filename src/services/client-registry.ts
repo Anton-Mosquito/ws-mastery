@@ -27,6 +27,10 @@ export class ClientRegistry {
     return meta;
   }
 
+  get(socket: WebSocket): ClientMeta | undefined {
+    return this.clients.get(socket);
+  }
+
   unregister(socket: WebSocket): ClientMeta | undefined {
     const meta = this.clients.get(socket);
 

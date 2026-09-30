@@ -41,6 +41,7 @@ import {
   TokenRefreshService,
   HeartbeatService,
   ClientRegistry,
+  ConnectionCleanupService,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -74,6 +75,16 @@ const roomService = new RoomService(
 
 const tokenRefreshService = new TokenRefreshService(verifyToken);
 const heartbeatService = new HeartbeatService();
+
+const connectionCleanupService = new ConnectionCleanupService(
+  clientRegistry,
+  roomManager,
+  presenceService,
+  broadcastService,
+  broadcastPresence,
+  connectionsByIp,
+  rooms,
+);
 
 redisBroadcastSubscriber.start((room, data) => {
   localBroadcast(rooms, room, data, clients);
@@ -396,38 +407,8 @@ wss.on(
       }
     });
 
-    socket.on("close", async () => {
-      const meta = clients.get(socket)!;
-      await presenceService.removeUser(meta.room, meta.username);
-
-      broadcastService.broadcast(
-        meta.room,
-        {
-          type: "system",
-          text: `${meta.username} вийшов із кімнати`,
-        },
-        socket,
-      );
-
-      roomManager.leave(socket);
-
-      console.log(
-        `📊 Кімната "${meta.room}": ${rooms.get(meta.room)?.size ?? 0} учасників`,
-      );
-
-      clientRegistry.unregister(socket);
-
-      const remaining = (connectionsByIp.get(clientIp) ?? 1) - 1;
-
-      if (remaining > 0) connectionsByIp.set(clientIp, remaining);
-      else connectionsByIp.delete(clientIp);
-
-      void broadcastPresence(meta.room).catch((error) => {
-        console.error(
-          `💥 Presence leave error for ${meta.username}:`,
-          error.message,
-        );
-      });
+    socket.on("close", () => {
+      void connectionCleanupService.cleanup(socket, clientIp);
     });
 
     socket.on("pong", () => {

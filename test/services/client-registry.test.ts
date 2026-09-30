@@ -153,4 +153,30 @@ describe("ClientRegistry", () => {
     assert.equal(clients.size, 0);
     assert.equal(clientsByUsername.size, 0);
   });
+
+  it("returns registered client metadata", () => {
+    const clients: ClientsType = new Map();
+    const clientsByUsername = new Map<string, WebSocket>();
+
+    const registry = new ClientRegistry(clients, clientsByUsername);
+
+    const socket = createSocket();
+
+    const registered = registry.register(socket, {
+      userId: "user-1",
+      username: "Anton",
+      exp: 1234567890,
+    });
+
+    assert.equal(registry.get(socket), registered);
+  });
+
+  it("returns undefined for an unknown client", () => {
+    const clients: ClientsType = new Map();
+    const clientsByUsername = new Map<string, WebSocket>();
+
+    const registry = new ClientRegistry(clients, clientsByUsername);
+
+    assert.equal(registry.get(createSocket()), undefined);
+  });
 });
