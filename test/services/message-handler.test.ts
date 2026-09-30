@@ -116,8 +116,26 @@ function createDependencies() {
     },
   };
 
+  type TokenRefreshFakeResult =
+    | {
+        success: true;
+        payload: {
+          userId: string;
+          username: string;
+          exp: number;
+        };
+      }
+    | {
+        success: false;
+        reason: "identity_mismatch" | "invalid_token";
+      };
+
   const tokenRefreshService = {
-    refresh(payload: unknown, username: string, token: string) {
+    refresh(
+      payload: unknown,
+      username: string,
+      token: string,
+    ): TokenRefreshFakeResult {
       refreshes.push({
         payload,
         username,
@@ -125,7 +143,7 @@ function createDependencies() {
       });
 
       return {
-        success: true as const,
+        success: true,
         payload: {
           userId: "user-1",
           username: "Anton",
@@ -395,5 +413,116 @@ describe("MessageHandler", () => {
 
     assert.equal(deps.broadcasts.length, 11);
     assert.deepEqual(sent, []);
+  });
+
+  it("updates lastActivity when a message is handled", async () => {
+    const { handler, meta, deps } = createHandler();
+
+    meta.lastActivity = 0;
+
+    await handler.handle(
+      Buffer.from(
+        JSON.stringify({
+          type: "ping",
+          sentAt: 123,
+        }),
+      ),
+      false,
+    );
+
+    assert.notEqual(meta.lastActivity, 0);
+    assert.equal(deps.heartbeats.length, 1);
+  });
+
+  it("closes the socket when refreshed token has different identity", async () => {
+    const { handler, closed, deps } = createHandler();
+
+    deps.tokenRefreshService.refresh = () => ({
+      success: false as const,
+      reason: "identity_mismatch" as const,
+    });
+
+    await handler.handle(
+      Buffer.from(
+        JSON.stringify({
+          type: "refresh_token",
+          token: "different-user-token",
+        }),
+      ),
+      false,
+    );
+
+    assert.deepEqual(closed, [
+      {
+        code: 1008,
+        reason: "Token identity mismatch",
+      },
+    ]);
+  });
+
+  it("closes the socket when refresh token is invalid", async () => {
+    const { handler, closed, deps } = createHandler();
+
+    deps.tokenRefreshService.refresh = () => ({
+      success: false as const,
+      reason: "invalid_token" as const,
+    });
+
+    await handler.handle(
+      Buffer.from(
+        JSON.stringify({
+          type: "refresh_token",
+          token: "invalid-token",
+        }),
+      ),
+      false,
+    );
+
+    assert.deepEqual(closed, [
+      {
+        code: 1008,
+        reason: "Invalid refresh token",
+      },
+    ]);
+  });
+
+  it("closes the socket when joining a room fails", async () => {
+    const { handler, closed, deps } = createHandler();
+
+    deps.roomService.join = async () => {
+      throw new Error("Presence unavailable");
+    };
+
+    await handler.handle(
+      Buffer.from(
+        JSON.stringify({
+          type: "join_room",
+          room: "random",
+        }),
+      ),
+      false,
+    );
+
+    assert.deepEqual(closed, [
+      {
+        code: 1011,
+        reason: "Presence unavailable",
+      },
+    ]);
+  });
+
+  it("handles application pong", async () => {
+    const { handler, deps } = createHandler();
+
+    await handler.handle(
+      Buffer.from(
+        JSON.stringify({
+          type: "pong",
+        }),
+      ),
+      false,
+    );
+
+    assert.equal(deps.heartbeats.length, 1);
   });
 });
