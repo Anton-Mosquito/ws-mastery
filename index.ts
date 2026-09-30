@@ -42,6 +42,7 @@ import {
   HeartbeatService,
   ClientRegistry,
   ConnectionCleanupService,
+  MessageHandler,
 } from "./src/services/index.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
@@ -245,6 +246,17 @@ wss.on(
 
     const meta = clientRegistry.register(socket, payload);
 
+    const messageHandler = new MessageHandler(
+      socket,
+      meta,
+      payload,
+      broadcastService,
+      whisperService,
+      roomService,
+      heartbeatService,
+      tokenRefreshService,
+    );
+
     const previousRoom = meta.room;
 
     void roomService
@@ -276,135 +288,7 @@ wss.on(
     );
 
     socket.on("message", async (data: RawData, isBinary: boolean) => {
-      meta.lastActivity = Date.now();
-      if (isBinary) {
-        const payload = toBuffer(data);
-        console.log(`📦 Бінарний фрейм, ${payload.length} байт`);
-        broadcastService.broadcast(meta.room, payload);
-        return;
-      } else {
-        console.log(`📝 Текстовий фрейм:`, data.toString());
-      }
-
-      if (!limiter.tryConsume()) {
-        violations++;
-        console.log(
-          `⚠️ Rate limit перевищено (${violations}) для ${payload.username}`,
-        );
-
-        socket.send(
-          JSON.stringify({
-            type: "error",
-            message: "Занадто багато повідомлень, пригальмуй",
-          }),
-        );
-
-        if (violations >= 5) {
-          socket.close(1008, "Rate limit violation");
-        }
-        return;
-      }
-
-      const parsed = parseClientMessage(data.toString());
-
-      if (!parsed.success) {
-        socket.send(
-          JSON.stringify({
-            type: "error",
-            message: parsed.errorMessage,
-          }),
-        );
-        return;
-      }
-
-      const message: ClientMessage = parsed.message;
-
-      if (message.type === "chat_message") {
-        const text = message.text;
-        const whisper = parseWhisperCommand(text);
-
-        if (whisper) {
-          whisperService.handle(socket, meta.username, whisper);
-          return;
-        }
-
-        const clientMessage: ClientMessage = {
-          type: "chat_message",
-          username: meta.username,
-          text,
-          timestamp: Date.now(),
-        };
-
-        broadcastService.broadcast(meta.room, clientMessage);
-        return;
-      }
-
-      if (message.type === "join_room") {
-        const roomName = message.room;
-        const previousRoom = meta.room;
-        const systemLeftMessage: ClientMessage = {
-          type: "system",
-          text: `${meta.username} залишив кімнату`,
-        };
-
-        broadcastService.broadcast(previousRoom, systemLeftMessage);
-
-        try {
-          await roomService.join(socket, roomName);
-        } catch (error) {
-          console.error(
-            `💥 Presence room change error for ${meta.username}:`,
-            error instanceof Error ? error.message : error,
-          );
-          socket.close(1011, "Presence unavailable");
-          return;
-        }
-
-        const systemJoinMessage: ClientMessage = {
-          type: "system",
-          text: `${meta.username} приєднався до кімнати`,
-        };
-
-        broadcastService.broadcast(roomName, systemJoinMessage, socket);
-        socket.send(JSON.stringify({ type: "room_joined", room: roomName }));
-      }
-
-      if (message.type === "ping") {
-        heartbeatService.handlePing(socket, meta, message.sentAt);
-      }
-
-      if (message.type === "refresh_token") {
-        const result = tokenRefreshService.refresh(
-          payload,
-          meta.username,
-          message.token,
-        );
-
-        if (!result.success) {
-          if (result.reason === "identity_mismatch") {
-            socket.close(1008, "Token identity mismatch");
-            return;
-          }
-
-          socket.close(1008, "Invalid refresh token");
-          return;
-        }
-
-        meta.expiresAt = result.payload.exp;
-
-        socket.send(
-          JSON.stringify({
-            type: "token_refreshed",
-            expiresAt: result.payload.exp,
-          }),
-        );
-
-        return;
-      }
-
-      if (message.type === "pong") {
-        heartbeatService.markAlive(meta);
-      }
+      void messageHandler.handle(data, isBinary);
     });
 
     socket.on("close", () => {
