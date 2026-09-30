@@ -199,4 +199,32 @@ describe("ConnectionCleanupService", () => {
 
     assert.equal(deps.getUnregistered(), true);
   });
+
+  it("continues local cleanup when presence removal fails", async () => {
+    const socket = createSocket();
+    const deps = createDependencies(socket);
+
+    const failingPresenceService = {
+      async removeUser() {
+        throw new Error("Redis unavailable");
+      },
+    };
+
+    const service = new ConnectionCleanupService(
+      deps.clientRegistry,
+      deps.roomManager,
+      failingPresenceService,
+      deps.broadcastService,
+      deps.broadcastPresence,
+      deps.connectionsByIp,
+      deps.rooms,
+    );
+
+    await assert.doesNotReject(service.cleanup(socket, "127.0.0.1"));
+
+    assert.equal(deps.getRoomLeft(), true);
+    assert.equal(deps.getUnregistered(), true);
+    assert.equal(deps.connectionsByIp.get("127.0.0.1"), 1);
+    assert.deepEqual(deps.broadcastedRooms, ["general"]);
+  });
 });

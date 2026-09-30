@@ -49,7 +49,14 @@ export class ConnectionCleanupService {
     const roomName = meta.room;
     const username = meta.username;
 
-    await this.presenceService.removeUser(roomName, username);
+    try {
+      await this.presenceService.removeUser(roomName, username);
+    } catch (error) {
+      console.error(
+        `💥 Presence remove error for ${username}:`,
+        error instanceof Error ? error.message : error,
+      );
+    }
 
     this.broadcastService.broadcast(
       roomName,
