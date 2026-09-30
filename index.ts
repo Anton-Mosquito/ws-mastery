@@ -5,7 +5,6 @@ import type { RawData } from "ws";
 import { nanoid } from "nanoid";
 
 import type {
-  ClientMeta,
   TokenPayload,
   RoomsType,
   ClientMessage,
@@ -14,19 +13,14 @@ import type {
 import {
   PORT,
   MAX_CONNECTIONS_PER_IP,
-  ALLOWED_ORIGINS,
   INSTANCE_ID,
 } from "./src/constants/index.js";
 import {
   benchmarkBroadcast,
   localBroadcast,
-  toBuffer,
   getClientIp,
-  parseClientMessage,
-  parseWhisperCommand,
 } from "./src/utils/index.js";
 import {
-  RateLimiter,
   getToken,
   verifyToken,
   ConnectionMonitor,
@@ -182,7 +176,6 @@ server.on("request", (req, res) => {
 });
 
 server.on("upgrade", (request, socket, head) => {
-  const origin = request.headers.origin;
   const clientIp = getClientIp(request);
 
   if ((connectionsByIp.get(clientIp) ?? 0) >= MAX_CONNECTIONS_PER_IP) {
@@ -224,8 +217,6 @@ wss.on(
     payload: TokenPayload,
     clientIp: string,
   ) => {
-    const limiter = new RateLimiter(10, 5); // 10 повідомлень бурстом, поповнення 5/сек
-    let violations = 0;
     const { username, userId } = payload;
 
     console.log("🌐 Origin:", request.headers.origin);
