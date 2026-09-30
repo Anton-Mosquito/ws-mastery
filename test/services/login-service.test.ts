@@ -51,7 +51,7 @@ test("LoginService", async (t) => {
     const result = service.login("Anton", undefined);
 
     assert.equal(result.username, "Anton");
-    assert.match(result.userId, /^\w{8}$/);
+    assert.match(result.userId, /^[A-Za-z0-9_-]{8}$/);
     assert.equal(result.token, `Anton:${result.userId}`);
   });
 
@@ -62,8 +62,8 @@ test("LoginService", async (t) => {
 
     const result = service.login();
 
-    assert.match(result.username, /^Гість-\w{4}$/);
-    assert.match(result.userId, /^\w{8}$/);
+    assert.match(result.username, /^Гість-[A-Za-z0-9_-]{4}$/);
+    assert.match(result.userId, /^[A-Za-z0-9_-]{8}$/);
     assert.equal(result.token, `${result.username}:${result.userId}`);
   });
 });
