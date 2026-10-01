@@ -1,14 +1,9 @@
-import http, { type IncomingMessage } from "http";
-import { WebSocketServer, WebSocket } from "ws";
+import { type IncomingMessage } from "http";
+import { WebSocket } from "ws";
 import type { RawData } from "ws";
 import { registerHttpRoutes } from "./src/http/register-http-routes.js";
 
-import type {
-  TokenPayload,
-  RoomsType,
-  ClientMessage,
-  ClientsType,
-} from "./src/types/index.js";
+import type { TokenPayload, ClientMessage } from "./src/types/index.js";
 import {
   PORT,
   MAX_CONNECTIONS_PER_IP,
@@ -22,73 +17,44 @@ import {
 import {
   getToken,
   verifyToken,
-  ConnectionMonitor,
-  BroadcastService,
-  RoomManager,
-  PresenceService,
   publisher,
   subscriber,
+  ConnectionMonitor,
   RedisBroadcastSubscriber,
-  WhisperService,
-  RoomService,
-  TokenRefreshService,
-  HeartbeatService,
-  ClientRegistry,
-  ConnectionCleanupService,
   MessageHandler,
-  WebSocketAuthService,
-  ConnectionLifecycleService,
-  LoginService,
 } from "./src/services/index.js";
+import { createApplication } from "./src/create-application.js";
 
 console.log(`🆔 Instance ID: ${INSTANCE_ID}`);
 
-const server = http.createServer();
-const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
-
-const clients: ClientsType = new Map();
-const clientsByUsername = new Map<string, WebSocket>();
-const clientRegistry = new ClientRegistry(clients, clientsByUsername);
-const whisperService = new WhisperService(clientsByUsername, clients);
-const rooms: RoomsType = new Map();
-const connectionsByIp = new Map<string, number>();
-const roomManager = new RoomManager(rooms, clients);
-const presenceService = new PresenceService(publisher);
-const redisBroadcastSubscriber = new RedisBroadcastSubscriber(subscriber);
-const loginService = new LoginService(getToken);
-
-const broadcastService = new BroadcastService(
+const {
+  server,
+  wss,
+  clients,
+  clientsByUsername,
   rooms,
-  clients,
-  publisher,
-  INSTANCE_ID,
-);
-
-const roomService = new RoomService(
-  roomManager,
-  presenceService,
-  clients,
-  broadcastPresence,
-);
-
-const tokenRefreshService = new TokenRefreshService(verifyToken);
-const webSocketAuthService = new WebSocketAuthService(verifyToken);
-const heartbeatService = new HeartbeatService();
-
-const connectionCleanupService = new ConnectionCleanupService(
+  connectionsByIp,
   clientRegistry,
+  whisperService,
   roomManager,
   presenceService,
   broadcastService,
-  broadcastPresence,
-  connectionsByIp,
-  rooms,
-);
-
-const connectionLifecycleService = new ConnectionLifecycleService(
-  connectionCleanupService,
+  roomService,
+  tokenRefreshService,
+  webSocketAuthService,
   heartbeatService,
-);
+  connectionCleanupService,
+  connectionLifecycleService,
+  loginService,
+  broadcastPresence,
+} = createApplication({
+  publisher,
+  getToken,
+  verifyToken,
+  instanceId: INSTANCE_ID,
+});
+
+const redisBroadcastSubscriber = new RedisBroadcastSubscriber(subscriber);
 
 redisBroadcastSubscriber.start((room, data) => {
   localBroadcast(rooms, room, data, clients);
@@ -104,16 +70,16 @@ function logAuthFailure(request: IncomingMessage, reason: string) {
   );
 }
 
-async function broadcastPresence(roomName: string) {
-  const users = await presenceService.getUsers(roomName);
+// async function broadcastPresence(roomName: string) {
+//   const users = await presenceService.getUsers(roomName);
 
-  const message: ClientMessage = {
-    type: "presence_update",
-    users,
-  };
+//   const message: ClientMessage = {
+//     type: "presence_update",
+//     users,
+//   };
 
-  broadcastService.broadcast(roomName, message);
-}
+//   broadcastService.broadcast(roomName, message);
+// }
 
 // // While room entering
 // async function joinRoomDistributed(socket: WebSocket, roomName: string) {
