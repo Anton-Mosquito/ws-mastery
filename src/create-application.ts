@@ -1,6 +1,5 @@
 import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { INSTANCE_ID } from "./constants/index.js";
 
 import type {
   ClientsType,
