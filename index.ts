@@ -4,11 +4,11 @@ import { benchmarkBroadcast, localBroadcast } from "./src/utils/index.js";
 import {
   getToken,
   verifyToken,
-  publisher,
-  subscriber,
   ConnectionMonitor,
   RedisBroadcastSubscriber,
 } from "./src/services/index.js";
+
+import { publisher, subscriber } from "./src/services/redis.js";
 import { createApplication } from "./src/create-application.js";
 import { registerWebSocketHandlers } from "./src/http/register-websocket-handlers.js";
 

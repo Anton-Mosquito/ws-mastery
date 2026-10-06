@@ -4,7 +4,6 @@ export { ConnectionMonitor } from "./connection-monitor.js";
 export { BroadcastService } from "./broadcast-service.js";
 export { RoomManager } from "./room-manager.js";
 export { PresenceService } from "./presence-service.js";
-export { publisher, subscriber } from "./redis.js";
 export { RedisBroadcastSubscriber } from "./redis-broadcast-subscriber.js";
 export { WhisperService } from "./whisper-service.js";
 export { RoomService } from "./room-service.js";
