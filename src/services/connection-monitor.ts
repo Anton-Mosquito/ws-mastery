@@ -8,7 +8,7 @@ import {
   IDLE_CHECK_INTERVAL,
   INSTANCE_ID,
 } from "../constants/index.js";
-import { terminateSlowConsumer } from "../utils/index.js";
+import { terminateSlowConsumer } from "../utils/terminate-slow-consumer.js";
 
 export class ConnectionMonitor {
   private timer: NodeJS.Timeout | null = null;

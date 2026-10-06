@@ -4,7 +4,7 @@ import type { RawData } from "ws";
 
 import type { TokenPayload, ClientMessage } from "../types/index.js";
 import { MAX_CONNECTIONS_PER_IP } from "../constants/index.js";
-import { getClientIp } from "../utils/index.js";
+import { getClientIp } from "../utils/get-client-ip.js";
 
 import type { ApplicationContext } from "../create-application.js";
 import { MessageHandler } from "../services/index.js";

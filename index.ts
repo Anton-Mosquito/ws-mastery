@@ -1,6 +1,7 @@
 import { registerHttpRoutes } from "./src/http/register-http-routes.js";
 import { PORT, INSTANCE_ID } from "./src/constants/index.js";
-import { benchmarkBroadcast, localBroadcast } from "./src/utils/index.js";
+import { benchmarkBroadcast } from "./src/utils/benchmark.js";
+import { localBroadcast } from "./src/utils/local-broadcast.js";
 import {
   getToken,
   verifyToken,

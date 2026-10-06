@@ -1,5 +1,5 @@
 import type { TokenPayload } from "../types/index.js";
-import { isRecord } from "../utils/index.js";
+import { isRecord } from "../utils/type-guards.js";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-не-для-проду";
