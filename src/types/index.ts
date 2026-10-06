@@ -35,13 +35,6 @@ export type BroadcastData =
   | ArrayBuffer
   | Uint8Array;
 
-export interface MonitorConfig {
-  idleTimeout: number;
-  idleCheckInterval: number;
-  tokenCheckInterval: number;
-  slowConsumerInterval?: number;
-}
-
 export type ParseClientMessageResult =
   | {
       success: true;
