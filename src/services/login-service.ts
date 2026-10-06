@@ -1,13 +1,7 @@
 import { nanoid } from "nanoid";
+import type { LoginResult } from "../types/index.js";
 
 type GetToken = (username: string, userId: string) => string;
-
-export interface LoginResult {
-  token: string;
-  expiresIn: "1h";
-  userId: string;
-  username: string;
-}
 
 export class LoginService {
   constructor(private readonly getToken: GetToken) {}

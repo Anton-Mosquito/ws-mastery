@@ -1,5 +1,14 @@
 import type { WebSocket } from "ws";
-import type { ClientMessage, ServerMessage } from "../schemas/index.js";
+import type { z } from "zod";
+import type {
+  messageSchema,
+  redisEnvelopeSchema,
+  serverMessageSchema,
+} from "../schemas/index.js";
+
+export type ClientMessage = z.infer<typeof messageSchema>;
+export type ServerMessage = z.infer<typeof serverMessageSchema>;
+export type RedisEnvelope = z.infer<typeof redisEnvelopeSchema>;
 
 export interface ClientMeta {
   id: string;
@@ -33,8 +42,47 @@ export interface MonitorConfig {
   slowConsumerInterval?: number;
 }
 
-export type {
-  ClientMessage,
-  RedisEnvelope,
-  ServerMessage,
-} from "../schemas/index.js";
+export type ParseClientMessageResult =
+  | {
+      success: true;
+      message: ClientMessage;
+    }
+  | {
+      success: false;
+      errorMessage: "Некоректний JSON" | "Невірний формат повідомлення";
+    };
+
+export interface WhisperCommand {
+  recipientUsername: string;
+  text: string;
+}
+
+export type WebSocketAuthResult =
+  | {
+      success: true;
+      payload: TokenPayload;
+    }
+  | {
+      success: false;
+      statusCode: 401 | 403;
+      reason: string;
+    };
+
+export type VerifyToken = (token: string) => TokenPayload;
+
+export type TokenRefreshResult =
+  | {
+      success: true;
+      payload: TokenPayload;
+    }
+  | {
+      success: false;
+      reason: "identity_mismatch" | "invalid_token";
+    };
+
+export interface LoginResult {
+  token: string;
+  expiresIn: "1h";
+  userId: string;
+  username: string;
+}

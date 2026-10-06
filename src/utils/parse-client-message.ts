@@ -1,15 +1,5 @@
 import { messageSchema } from "../schemas/index.js";
-import type { ClientMessage } from "../types/index.js";
-
-export type ParseClientMessageResult =
-  | {
-      success: true;
-      message: ClientMessage;
-    }
-  | {
-      success: false;
-      errorMessage: "Некоректний JSON" | "Невірний формат повідомлення";
-    };
+import type { ParseClientMessageResult } from "../types/index.js";
 
 export function parseClientMessage(raw: string): ParseClientMessageResult {
   let parsedJson: unknown;

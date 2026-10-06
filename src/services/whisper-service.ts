@@ -1,7 +1,7 @@
 import { WebSocket } from "ws";
 
 import type { ClientsType } from "../types/index.js";
-import type { WhisperCommand } from "../utils/parse-whisper-command.js";
+import type { WhisperCommand } from "../types/index.js";
 import { sendToClient } from "../utils/send-to-client.js";
 
 export class WhisperService {

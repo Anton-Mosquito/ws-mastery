@@ -1,7 +1,4 @@
-export interface WhisperCommand {
-  recipientUsername: string;
-  text: string;
-}
+import type { WhisperCommand } from "../types/index.js";
 
 export function parseWhisperCommand(text: string): WhisperCommand | null {
   const match = text.match(/^\/whisper\s+(\S+)\s+(.+)$/s);

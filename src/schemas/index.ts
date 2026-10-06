@@ -44,16 +44,4 @@ const redisEnvelopeSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-type ClientMessage = z.infer<typeof messageSchema>;
-type ServerMessage = z.infer<typeof serverMessageSchema>;
-
-type RedisEnvelope = z.infer<typeof redisEnvelopeSchema>;
-
-export {
-  redisEnvelopeSchema,
-  messageSchema,
-  serverMessageSchema,
-  type ClientMessage,
-  type ServerMessage,
-  type RedisEnvelope,
-};
+export { redisEnvelopeSchema, messageSchema, serverMessageSchema };

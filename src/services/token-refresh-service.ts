@@ -1,16 +1,8 @@
-import type { TokenPayload } from "../types/index.js";
-
-type VerifyToken = (token: string) => TokenPayload;
-
-export type TokenRefreshResult =
-  | {
-      success: true;
-      payload: TokenPayload;
-    }
-  | {
-      success: false;
-      reason: "identity_mismatch" | "invalid_token";
-    };
+import type {
+  TokenPayload,
+  VerifyToken,
+  TokenRefreshResult,
+} from "../types/index.js";
 
 export class TokenRefreshService {
   constructor(private readonly verifyToken: VerifyToken) {}

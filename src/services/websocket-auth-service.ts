@@ -1,19 +1,6 @@
 import type { IncomingMessage } from "http";
-import type { TokenPayload } from "../types/index.js";
+import type { WebSocketAuthResult, VerifyToken } from "../types/index.js";
 import { ALLOWED_ORIGINS } from "../constants/index.js";
-
-type VerifyToken = (token: string) => TokenPayload;
-
-export type WebSocketAuthResult =
-  | {
-      success: true;
-      payload: TokenPayload;
-    }
-  | {
-      success: false;
-      statusCode: 401 | 403;
-      reason: string;
-    };
 
 export class WebSocketAuthService {
   constructor(

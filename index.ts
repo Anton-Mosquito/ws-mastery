@@ -1,11 +1,6 @@
-import { type IncomingMessage } from "http";
 import { registerHttpRoutes } from "./src/http/register-http-routes.js";
 import { PORT, INSTANCE_ID } from "./src/constants/index.js";
-import {
-  benchmarkBroadcast,
-  localBroadcast,
-  getClientIp,
-} from "./src/utils/index.js";
+import { benchmarkBroadcast, localBroadcast } from "./src/utils/index.js";
 import {
   getToken,
   verifyToken,
@@ -30,22 +25,10 @@ const {
   server,
   wss,
   clients,
-  clientsByUsername,
   rooms,
-  connectionsByIp,
-  clientRegistry,
-  whisperService,
-  roomManager,
   presenceService,
   broadcastService,
-  roomService,
-  tokenRefreshService,
-  webSocketAuthService,
-  heartbeatService,
-  connectionCleanupService,
-  connectionLifecycleService,
   loginService,
-  broadcastPresence,
 } = application;
 
 const redisBroadcastSubscriber = new RedisBroadcastSubscriber(subscriber);
@@ -57,37 +40,6 @@ redisBroadcastSubscriber.start((room, data) => {
 const monitorService = new ConnectionMonitor(clients, publisher);
 
 monitorService.start();
-
-// async function broadcastPresence(roomName: string) {
-//   const users = await presenceService.getUsers(roomName);
-
-//   const message: ClientMessage = {
-//     type: "presence_update",
-//     users,
-//   };
-
-//   broadcastService.broadcast(roomName, message);
-// }
-
-// // While room entering
-// async function joinRoomDistributed(socket: WebSocket, roomName: string) {
-//   const meta = clients.get(socket)!;
-//   const previousRoom = roomManager.join(socket, roomName);
-
-//   console.log(
-//     `📊 Кімната "${meta.room}": ${rooms.get(meta.room)?.size ?? 0} учасників`,
-//   );
-
-//   // share state in Redis
-//   await presenceService.removeUser(previousRoom, meta.username);
-//   await presenceService.addUser(roomName, meta.username);
-
-//   // Send actual lists all instances
-//   await broadcastPresence(previousRoom);
-//   if (previousRoom !== roomName) {
-//     await broadcastPresence(roomName);
-//   }
-// }
 
 registerHttpRoutes(server, loginService);
 
