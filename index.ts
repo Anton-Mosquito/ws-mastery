@@ -2,13 +2,9 @@ import { registerHttpRoutes } from "./src/http/register-http-routes.js";
 import { PORT, INSTANCE_ID } from "./src/constants/index.js";
 import { benchmarkBroadcast } from "./src/utils/benchmark.js";
 import { localBroadcast } from "./src/utils/local-broadcast.js";
-import {
-  getToken,
-  verifyToken,
-  ConnectionMonitor,
-  RedisBroadcastSubscriber,
-} from "./src/services/index.js";
-
+import { getToken, verifyToken } from "./src/services/jwt.js";
+import { ConnectionMonitor } from "./src/services/connection-monitor.js";
+import { RedisBroadcastSubscriber } from "./src/services/redis-broadcast-subscriber.js";
 import { publisher, subscriber } from "./src/services/redis.js";
 import { createApplication } from "./src/create-application.js";
 import { registerWebSocketHandlers } from "./src/http/register-websocket-handlers.js";

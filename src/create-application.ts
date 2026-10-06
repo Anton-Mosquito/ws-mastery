@@ -8,21 +8,18 @@ import type {
   TokenPayload,
 } from "./types/index.js";
 
-import {
-  BroadcastService,
-  ClientRegistry,
-  ConnectionCleanupService,
-  ConnectionLifecycleService,
-  HeartbeatService,
-  LoginService,
-  MessageHandler,
-  PresenceService,
-  RoomManager,
-  RoomService,
-  TokenRefreshService,
-  WebSocketAuthService,
-  WhisperService,
-} from "./services/index.js";
+import { BroadcastService } from "./services/broadcast-service.js";
+import { ClientRegistry } from "./services/client-registry.js";
+import { ConnectionCleanupService } from "./services/connection-cleanup-service.js";
+import { ConnectionLifecycleService } from "./services/connection-lifecycle-service.js";
+import { HeartbeatService } from "./services/heartbeat-service.js";
+import { LoginService } from "./services/login-service.js";
+import { PresenceService } from "./services/presence-service.js";
+import { RoomManager } from "./services/room-manager.js";
+import { RoomService } from "./services/room-service.js";
+import { TokenRefreshService } from "./services/token-refresh-service.js";
+import { WebSocketAuthService } from "./services/websocket-auth-service.js";
+import { WhisperService } from "./services/whisper-service.js";
 
 interface Publisher {
   publish(channel: string, message: string): Promise<number>;

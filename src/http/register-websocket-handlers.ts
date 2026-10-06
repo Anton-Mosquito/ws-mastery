@@ -7,7 +7,7 @@ import { MAX_CONNECTIONS_PER_IP } from "../constants/index.js";
 import { getClientIp } from "../utils/get-client-ip.js";
 
 import type { ApplicationContext } from "../create-application.js";
-import { MessageHandler } from "../services/index.js";
+import { MessageHandler } from "../services/message-handler.js";
 
 function logAuthFailure(request: IncomingMessage, reason: string) {
   console.warn(
